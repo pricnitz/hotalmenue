@@ -1,13 +1,6 @@
 import { NextResponse } from "next/server";
 import clientPromise from "../../../lib/mongodb";
 
-const defaultCategories = [
-  { name: "Appetizers" },
-  { name: "Mains" },
-  { name: "Drinks" },
-  { name: "Desserts" }
-];
-
 export async function GET() {
   try {
     const client = await clientPromise;
@@ -15,12 +8,6 @@ export async function GET() {
     const collection = db.collection("categories");
 
     const categories = await collection.find({}).toArray();
-
-    if (categories.length === 0) {
-      await collection.insertMany(defaultCategories);
-      const seeded = await collection.find({}).toArray();
-      return NextResponse.json(seeded, { status: 200 });
-    }
 
     return NextResponse.json(categories, { status: 200 });
   } catch (error) {

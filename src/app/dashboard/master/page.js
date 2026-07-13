@@ -26,6 +26,7 @@ export default function MasterDashboard() {
     ownerName: "",
     phone: "",
     email: "",
+    password: "",
     address: "",
     gstNumber: "",
     planType: "Growth",
@@ -87,6 +88,7 @@ export default function MasterDashboard() {
           ownerName: "",
           phone: "",
           email: "",
+          password: "",
           address: "",
           gstNumber: "",
           planType: "Growth",
@@ -495,16 +497,29 @@ export default function MasterDashboard() {
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Physical Address</label>
-                <input
-                  type="text"
-                  required
-                  value={regForm.address}
-                  onChange={(e) => setRegForm({...regForm, address: e.target.value})}
-                  className="block w-full rounded-xl border border-slate-200 dark:border-slate-850 bg-slate-50 dark:bg-zinc-950 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none"
-                  placeholder="Street, City, Zipcode"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Physical Address</label>
+                  <input
+                    type="text"
+                    required
+                    value={regForm.address}
+                    onChange={(e) => setRegForm({...regForm, address: e.target.value})}
+                    className="block w-full rounded-xl border border-slate-200 dark:border-slate-850 bg-slate-50 dark:bg-zinc-950 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none"
+                    placeholder="Street, City, Zipcode"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Account Password</label>
+                  <input
+                    type="password"
+                    required
+                    value={regForm.password}
+                    onChange={(e) => setRegForm({...regForm, password: e.target.value})}
+                    className="block w-full rounded-xl border border-slate-200 dark:border-slate-850 bg-slate-50 dark:bg-zinc-950 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none"
+                    placeholder="••••••••"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">

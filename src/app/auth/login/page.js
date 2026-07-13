@@ -1,58 +1,129 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { QrCodeIcon, CheckCircleIcon } from "../../../components/Icons";
 
 export default function LoginPage() {
   const router = useRouter();
+  const getUrlCredentials = () => {
+    if (typeof window === "undefined") return { email: "", password: "" };
+
+    const params = new URLSearchParams(window.location.search);
+    return {
+      email: params.get("email") || "",
+      password: params.get("password") || "",
+    };
+  };
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [success, setSuccess] = useState(false);
 
-  const handleSubmit = (e) => {
+  const redirectToDashboard = useCallback((redirectPath) => {
+    const target = redirectPath || "/dashboard/master";
+    if (typeof window !== "undefined") {
+      window.location.href = target;
+    } else {
+      router.replace(target);
+    }
+  }, [router]);
+
+  useEffect(() => {
+    const { email: urlEmail, password: urlPassword } = getUrlCredentials();
+    if (!urlEmail || !urlPassword) return;
+
+    setEmail(urlEmail);
+    setPassword(urlPassword);
+
+    const autoLogin = async () => {
+      setErrorMsg("");
+      setLoading(true);
+      try {
+        console.log("Auto-login request started...");
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: urlEmail, password: urlPassword }),
+        });
+
+        console.log("Auto-login response status:", res.status);
+        const data = await res.json();
+        console.log("Auto-login response data:", data);
+
+        if (res.ok) {
+          setSuccess(true);
+          if (data.restaurantId) {
+            try {
+              localStorage.setItem("restaurantId", data.restaurantId);
+            } catch (storageErr) {
+              console.warn("Failed to save restaurantId to localStorage:", storageErr);
+            }
+          }
+          redirectToDashboard(data.redirect);
+        } else {
+          setErrorMsg(data.error || "Invalid credentials.");
+          alert("Auto-login failed: " + (data.error || "Invalid credentials."));
+        }
+      } catch (err) {
+        console.error("Auto-login error:", err);
+        setErrorMsg("Failed to connect to authentication server: " + err.message);
+        alert("Auto-login error exception: " + err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    autoLogin();
+  }, [redirectToDashboard]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg("");
     setLoading(true);
+    alert("Sign In clicked. Submitting: " + email);
 
-    setTimeout(() => {
-      setLoading(false);
-      
-      const lowerEmail = email.toLowerCase().trim();
-      const pw = password.trim();
+    try {
+      console.log("Submitting login form for:", email);
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-      if (lowerEmail === "master@quickbite.com" && pw === "password") {
+      console.log("Submit response status:", res.status);
+      const data = await res.json();
+      console.log("Submit response data:", data);
+
+      if (res.ok) {
+        alert("Success! Redirecting to: " + data.redirect);
         setSuccess(true);
-        setTimeout(() => {
-          router.push("/dashboard/master");
-        }, 1000);
-      } else if (lowerEmail === "owner@cafe.com" && pw === "password") {
-        setSuccess(true);
-        setTimeout(() => {
-          router.push("/dashboard/restaurant");
-        }, 1000);
-      } else if (lowerEmail === "waiter@cafe.com" && pw === "password") {
-        setSuccess(true);
-        setTimeout(() => {
-          router.push("/dashboard/waiter");
-        }, 1000);
-      } else if (lowerEmail === "kitchen@cafe.com" && pw === "password") {
-        setSuccess(true);
-        setTimeout(() => {
-          router.push("/dashboard/kitchen");
-        }, 1000);
+        if (data.restaurantId) {
+          try {
+            localStorage.setItem("restaurantId", data.restaurantId);
+          } catch (storageErr) {
+            console.warn("Failed to save restaurantId to localStorage:", storageErr);
+          }
+        }
+        redirectToDashboard(data.redirect);
       } else {
-        setErrorMsg("Invalid credentials. Try using the credentials listed in the helper box below.");
+        setErrorMsg(data.error || "Invalid credentials.");
+        alert("Login failed response: " + (data.error || "Invalid credentials."));
       }
-    }, 1200);
+    } catch (err) {
+      console.error("Login error exception:", err);
+      setErrorMsg("Failed to connect to authentication server: " + err.message);
+      alert("Login Error Exception: " + err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 text-slate-800 dark:text-slate-200">
-      
+
       {/* Back to Home Link */}
       <div className="absolute top-4 left-4">
         <Link href="/" className="text-xs font-semibold text-slate-500 hover:text-brand-500">
@@ -77,7 +148,7 @@ export default function LoginPage() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white dark:bg-zinc-900 py-8 px-4 border border-slate-200 dark:border-slate-800 shadow-xl rounded-3xl sm:px-10 text-left space-y-6">
-          
+
           {success ? (
             <div className="text-center py-8 space-y-4">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">
@@ -160,34 +231,6 @@ export default function LoginPage() {
                 </button>
               </form>
 
-              {/* Testing Credentials Helper Box */}
-              <div className="bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-slate-850 p-4 rounded-2xl space-y-2 text-xs">
-                <p className="font-extrabold text-slate-900 dark:text-white uppercase tracking-wider text-[10px]">
-                  💡 Demo Testing Accounts
-                </p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1 text-[9px]">
-                  <div className="space-y-0.5">
-                    <span className="font-semibold text-slate-400">1. Master Admin</span>
-                    <p className="font-mono text-brand-500 font-bold">master@quickbite.com</p>
-                    <p className="font-mono text-slate-500">password</p>
-                  </div>
-                  <div className="space-y-0.5">
-                    <span className="font-semibold text-slate-400">2. Restaurant Admin</span>
-                    <p className="font-mono text-brand-500 font-bold">owner@cafe.com</p>
-                    <p className="font-mono text-slate-500">password</p>
-                  </div>
-                  <div className="space-y-0.5">
-                    <span className="font-semibold text-slate-400">3. Waiter Staff</span>
-                    <p className="font-mono text-brand-500 font-bold">waiter@cafe.com</p>
-                    <p className="font-mono text-slate-500">password</p>
-                  </div>
-                  <div className="space-y-0.5">
-                    <span className="font-semibold text-slate-400">4. Kitchen Staff</span>
-                    <p className="font-mono text-brand-500 font-bold">kitchen@cafe.com</p>
-                    <p className="font-mono text-slate-500">password</p>
-                  </div>
-                </div>
-              </div>
             </>
           )}
 

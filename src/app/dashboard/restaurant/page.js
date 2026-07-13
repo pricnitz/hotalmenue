@@ -27,6 +27,7 @@ export default function RestaurantDashboard() {
   const [categories, setCategories] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loadingDb, setLoadingDb] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
 
   // Table QR codes count state
   const [tableCount, setTableCount] = useState(20);
@@ -49,6 +50,30 @@ export default function RestaurantDashboard() {
 
   // New Category Form State
   const [categoryName, setCategoryName] = useState("");
+
+  const fetchRestaurantProfile = async () => {
+    try {
+      const restId = localStorage.getItem("restaurantId");
+      if (!restId) return;
+
+      const res = await fetch(`/api/restaurants/${restId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setProfile({
+          restaurantName: data.name || "Cafe Aroma",
+          ownerName: data.ownerName || "Aarav Sharma",
+          phone: data.phone || "+91 98200 12345",
+          email: data.email || "aarav@cafearoma.in",
+          address: data.address || "Plot 42, Bandra Reclamation, Bandra West, Mumbai, MH 400050",
+          gstNumber: data.gstNumber || "GST27AAACP9934B1Z3",
+          logoEmoji: data.logoEmoji || "☕",
+          themeColor: data.themeColor || "orange",
+        });
+      }
+    } catch (e) {
+      console.error("Failed to load restaurant profile:", e);
+    }
+  };
 
   // Fetch all databases from MongoDB API
   const fetchDbData = async () => {
@@ -81,6 +106,8 @@ export default function RestaurantDashboard() {
   };
 
   useEffect(() => {
+    setIsMounted(true);
+    fetchRestaurantProfile();
     fetchDbData();
     // Auto-generate tables on initial load
     generateTablesList(20);
@@ -349,6 +376,8 @@ export default function RestaurantDashboard() {
     blue: "bg-blue-500 hover:bg-blue-600 shadow-blue-500/25",
     charcoal: "bg-slate-900 dark:bg-white dark:text-slate-900 hover:bg-slate-800",
   };
+
+  if (!isMounted) return null;
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 text-slate-800 dark:text-slate-100 flex flex-col font-sans">

@@ -2,6 +2,38 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import clientPromise from "../../../../lib/mongodb";
 
+export async function GET(request, { params }) {
+  try {
+    const resolvedParams = await params;
+    const { id } = resolvedParams;
+
+    const client = await clientPromise;
+    const db = client.db("hotelmenu");
+    const collection = db.collection("restaurants");
+
+    let query;
+    try {
+      query = { _id: new ObjectId(id) };
+    } catch (e) {
+      query = { _id: id };
+    }
+
+    const restaurant = await collection.findOne(query);
+
+    if (!restaurant) {
+      return NextResponse.json({ error: "Restaurant not found" }, { status: 404 });
+    }
+
+    // Exclude password from the returned profile for security
+    const { password, ...safeProfile } = restaurant;
+
+    return NextResponse.json(safeProfile, { status: 200 });
+  } catch (error) {
+    console.error("Database GET Single Error:", error);
+    return NextResponse.json({ error: "Failed to fetch restaurant" }, { status: 500 });
+  }
+}
+
 export async function PUT(request, { params }) {
   try {
     const resolvedParams = await params;
@@ -14,7 +46,7 @@ export async function PUT(request, { params }) {
     const fields = [
       "name", "ownerName", "phone", "email", "address", 
       "gstNumber", "planType", "expiryDate", "status", 
-      "logoEmoji", "themeColor"
+      "logoEmoji", "themeColor", "password", "userId"
     ];
 
     fields.forEach((field) => {

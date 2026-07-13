@@ -9,6 +9,7 @@ export default function RegisterPage() {
     restaurantName: "",
     fullName: "",
     email: "",
+    password: "",
     phone: "",
     subdomain: "",
     cuisine: "cafe",
@@ -24,13 +25,17 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (form.restaurantName && form.fullName && form.email) {
+    if (form.restaurantName && form.fullName && form.email && form.password) {
       setLoading(true);
       try {
+        const randId = Math.floor(1000 + Math.random() * 9000);
+        const generatedUserId = `QB-OWNER-${randId}`;
         const payload = {
           name: form.restaurantName,
           ownerName: form.fullName,
           email: form.email,
+          password: form.password,
+          userId: generatedUserId,
           phone: form.phone,
           address: `Subdomain: ${form.subdomain}.quickbite.menu / Cuisine: ${form.cuisine}`,
           gstNumber: "GST-PENDING",
@@ -46,10 +51,9 @@ export default function RegisterPage() {
 
         if (res.ok) {
           setSuccess(true);
-          const randId = Math.floor(1000 + Math.random() * 9000);
           setGeneratedCredentials({
-            userId: `QB-OWNER-${randId}`,
-            password: "password",
+            userId: generatedUserId,
+            password: form.password,
             loginUrl: "/auth/login",
           });
         } else {
@@ -241,24 +245,42 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label htmlFor="subdomain" className="block text-xs font-bold uppercase tracking-wider text-slate-500">
-                  Desired Menu Subdomain
-                </label>
-                <div className="mt-1 flex rounded-xl shadow-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label htmlFor="subdomain" className="block text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Desired Menu Subdomain
+                  </label>
+                  <div className="mt-1 flex rounded-xl shadow-sm">
+                    <input
+                      id="subdomain"
+                      name="subdomain"
+                      type="text"
+                      required
+                      value={form.subdomain}
+                      onChange={handleInputChange}
+                      className="flex-1 min-w-0 block w-full px-3 py-2.5 border border-slate-200 dark:border-slate-800 rounded-l-xl bg-slate-50 dark:bg-zinc-900 shadow-xs placeholder-slate-400 focus:outline-none focus:ring-brand-500 focus:border-brand-500 text-sm"
+                      placeholder="aroma"
+                    />
+                    <span className="inline-flex items-center px-3 rounded-r-xl border border-l-0 border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-zinc-800 text-slate-500 text-xs font-semibold select-none">
+                      .quickbite.menu
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label htmlFor="password" className="block text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Create Password
+                  </label>
                   <input
-                    id="subdomain"
-                    name="subdomain"
-                    type="text"
+                    id="password"
+                    name="password"
+                    type="password"
                     required
-                    value={form.subdomain}
+                    value={form.password}
                     onChange={handleInputChange}
-                    className="flex-1 min-w-0 block w-full px-3 py-2.5 border border-slate-200 dark:border-slate-800 rounded-l-xl bg-slate-50 dark:bg-zinc-900 shadow-xs placeholder-slate-400 focus:outline-none focus:ring-brand-500 focus:border-brand-500 text-sm"
-                    placeholder="aroma"
+                    className="appearance-none block w-full px-3 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-zinc-900 shadow-xs placeholder-slate-400 focus:outline-none focus:ring-brand-500 focus:border-brand-500 text-sm"
+                    placeholder="••••••••"
                   />
-                  <span className="inline-flex items-center px-3 rounded-r-xl border border-l-0 border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-zinc-800 text-slate-500 text-xs font-semibold select-none">
-                    .quickbite.menu
-                  </span>
                 </div>
               </div>
 
