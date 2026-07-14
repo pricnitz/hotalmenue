@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
 import clientPromise from "../../../lib/mongodb";
 
-export async function GET() {
+export async function GET(request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const restaurantId = searchParams.get("restaurantId");
+
     const client = await clientPromise;
     const db = client.db("hotelmenu");
     const collection = db.collection("orders");
 
-    // Fetch all active orders sorted by time
-    const orders = await collection.find({}).sort({ timestamp: -1 }).toArray();
+    const query = restaurantId ? { restaurantId } : {};
+    const orders = await collection.find(query).sort({ timestamp: -1 }).toArray();
     return NextResponse.json(orders, { status: 200 });
   } catch (error) {
     console.error("GET Orders Error:", error);
@@ -19,7 +22,7 @@ export async function GET() {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { tableId, items, total } = body;
+    const { tableId, items, total, restaurantId } = body;
 
     if (!tableId || !items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: "Table ID and items list are required" }, { status: 400 });
@@ -38,9 +41,10 @@ export async function POST(request) {
         instructions: item.instructions || ""
       })),
       total: parseFloat(total) || 0,
-      status: "Pending",
+      status: body.status || "Pending",
       customerNotes: "",
       timestamp: new Date().toISOString(),
+      restaurantId: restaurantId || ""
     };
 
     const result = await collection.insertOne(newOrder);

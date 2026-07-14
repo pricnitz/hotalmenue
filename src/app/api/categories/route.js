@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
 import clientPromise from "../../../lib/mongodb";
 
-export async function GET() {
+export async function GET(request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const restaurantId = searchParams.get("restaurantId");
+
     const client = await clientPromise;
     const db = client.db("hotelmenu");
     const collection = db.collection("categories");
 
-    const categories = await collection.find({}).toArray();
+    const query = restaurantId ? { restaurantId } : {};
+    const categories = await collection.find(query).toArray();
 
     return NextResponse.json(categories, { status: 200 });
   } catch (error) {
@@ -19,7 +23,7 @@ export async function GET() {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { name } = body;
+    const { name, restaurantId } = body;
 
     if (!name) {
       return NextResponse.json({ error: "Category name is required" }, { status: 400 });
@@ -29,13 +33,16 @@ export async function POST(request) {
     const db = client.db("hotelmenu");
     const collection = db.collection("categories");
 
-    // Check duplicate
-    const existing = await collection.findOne({ name: { $regex: new RegExp(`^${name}$`, 'i') } });
+    // Check duplicate *only within the same restaurant*
+    const existing = await collection.findOne({
+      restaurantId: restaurantId || "",
+      name: { $regex: new RegExp(`^${name}$`, 'i') }
+    });
     if (existing) {
       return NextResponse.json({ error: "Category already exists" }, { status: 400 });
     }
 
-    const newCategory = { name };
+    const newCategory = { name, restaurantId: restaurantId || "" };
     const result = await collection.insertOne(newCategory);
     const saved = { ...newCategory, _id: result.insertedId };
 

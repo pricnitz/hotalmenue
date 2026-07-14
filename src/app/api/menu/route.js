@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
 import clientPromise from "../../../lib/mongodb";
 
-export async function GET() {
+export async function GET(request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const restaurantId = searchParams.get("restaurantId");
+
     const client = await clientPromise;
     const db = client.db("hotelmenu");
     const collection = db.collection("menu_items");
 
-    const items = await collection.find({}).toArray();
+    const query = restaurantId ? { restaurantId } : {};
+    const items = await collection.find(query).toArray();
 
     return NextResponse.json(items, { status: 200 });
   } catch (error) {
@@ -19,7 +23,7 @@ export async function GET() {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { name, price, category, isVeg, isAvailable, prepTime, description } = body;
+    const { name, price, category, isVeg, isAvailable, prepTime, description, restaurantId } = body;
 
     if (!name || price === undefined || !category) {
       return NextResponse.json({ error: "Name, Price, and Category are required" }, { status: 400 });
@@ -37,6 +41,7 @@ export async function POST(request) {
       isAvailable: isAvailable !== false,
       prepTime: parseInt(prepTime) || 10,
       description: description || "",
+      restaurantId: restaurantId || "",
     };
 
     const result = await collection.insertOne(newItem);

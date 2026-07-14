@@ -22,7 +22,7 @@ export async function POST(request) {
         if (user.role === "kitchen") redirectPath = "/dashboard/kitchen";
 
         return NextResponse.json(
-          { role: user.role, redirect: redirectPath, userId: user._id },
+          { role: user.role, redirect: redirectPath, userId: user._id, restaurantId: user.restaurantId || "" },
           { status: 200 }
         );
       }

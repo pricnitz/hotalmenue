@@ -9,6 +9,7 @@ export default function KitchenDashboard() {
   const [loggingOut, setLoggingOut] = useState(false);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
 
   // Local state to track checked menu item rows per order (so chefs can tap-strike items they've prepared)
@@ -16,7 +17,8 @@ export default function KitchenDashboard() {
 
   const fetchOrders = async () => {
     try {
-      const res = await fetch("/api/orders");
+      const restId = localStorage.getItem("restaurantId") || "";
+      const res = await fetch(`/api/orders?restaurantId=${restId}`);
       if (res.ok) {
         const data = await res.json();
         setOrders(data);
@@ -29,6 +31,7 @@ export default function KitchenDashboard() {
   };
 
   useEffect(() => {
+    setIsMounted(true);
     fetchOrders();
     // Poll orders database every 4 seconds
     const interval = setInterval(fetchOrders, 4000);
@@ -84,6 +87,8 @@ export default function KitchenDashboard() {
   const newOrders = orders.filter(o => o.status === "Received" || o.status === "Waiter Approved");
   const preparingOrders = orders.filter(o => o.status === "Preparing");
   const readyOrders = orders.filter(o => o.status === "Ready");
+
+  if (!isMounted) return null;
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col font-sans select-none">

@@ -9,9 +9,20 @@ export default function WaiterDashboard() {
   const [loggingOut, setLoggingOut] = useState(false);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
 
   // Ready Notification State
   const [notifiedReady, setNotifiedReady] = useState({}); // { [orderId]: true }
+
+  // New Order on Behalf States
+  const [menuItems, setMenuItems] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [activeCategory, setActiveCategory] = useState("All");
+  const [showPlaceOrderModal, setShowPlaceOrderModal] = useState(false);
+  const [newOrderTable, setNewOrderTable] = useState("T1");
+  const [newOrderCart, setNewOrderCart] = useState([]);
+  const [placingOrder, setPlacingOrder] = useState(false);
+  const [menuSearch, setMenuSearch] = useState("");
 
   // Edit Drawer
   const [editingOrder, setEditingOrder] = useState(null); // order object or null
@@ -22,7 +33,8 @@ export default function WaiterDashboard() {
 
   const fetchOrders = async () => {
     try {
-      const res = await fetch("/api/orders");
+      const restId = localStorage.getItem("restaurantId") || "";
+      const res = await fetch(`/api/orders?restaurantId=${restId}`);
       if (res.ok) {
         const data = await res.json();
         setOrders(data);
@@ -42,8 +54,98 @@ export default function WaiterDashboard() {
     }
   };
 
+  const fetchMenu = async () => {
+    try {
+      const restId = localStorage.getItem("restaurantId") || "";
+      if (!restId) return;
+      const res = await fetch(`/api/menu?restaurantId=${restId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setMenuItems(data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch menu in waiter portal:", e);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const restId = localStorage.getItem("restaurantId") || "";
+      if (!restId) return;
+      const res = await fetch(`/api/categories?restaurantId=${restId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setCategories(data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch categories in waiter portal:", e);
+    }
+  };
+
+  const addToNewOrderCart = (item) => {
+    setNewOrderCart((prev) => {
+      const existing = prev.find((i) => i._id === item._id);
+      if (existing) {
+        return prev.map((i) => (i._id === item._id ? { ...i, qty: i.qty + 1 } : i));
+      }
+      return [...prev, { name: item.name, price: item.price, _id: item._id, qty: 1 }];
+    });
+  };
+
+  const removeFromNewOrderCart = (itemId) => {
+    setNewOrderCart((prev) => {
+      const existing = prev.find((i) => i._id === itemId);
+      if (!existing) return prev;
+      if (existing.qty === 1) {
+        return prev.filter((i) => i._id !== itemId);
+      }
+      return prev.map((i) => (i._id === itemId ? { ...i, qty: i.qty - 1 } : i));
+    });
+  };
+
+  const handlePlaceOrderBehalf = async () => {
+    if (newOrderCart.length === 0) return;
+    setPlacingOrder(true);
+    try {
+      const restId = localStorage.getItem("restaurantId") || "";
+      const total = newOrderCart.reduce((acc, curr) => acc + curr.price * curr.qty, 0);
+      const itemsPayload = newOrderCart.map(i => ({
+        name: i.name,
+        qty: i.qty,
+        price: i.price
+      }));
+
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tableId: newOrderTable,
+          items: itemsPayload,
+          total,
+          restaurantId: restId,
+          status: "Received" // Approve immediately
+        })
+      });
+
+      if (res.ok) {
+        setNewOrderCart([]);
+        setShowPlaceOrderModal(false);
+        fetchOrders();
+      } else {
+        alert("Failed to submit order.");
+      }
+    } catch (e) {
+      console.error("Error placing order on behalf:", e);
+    } finally {
+      setPlacingOrder(false);
+    }
+  };
+
   useEffect(() => {
+    setIsMounted(true);
     fetchOrders();
+    fetchMenu();
+    fetchCategories();
     // Poll orders database every 4 seconds
     const interval = setInterval(fetchOrders, 4000);
     return () => clearInterval(interval);
@@ -160,6 +262,8 @@ export default function WaiterDashboard() {
   const cookingOrders = orders.filter(o => o.status === "Received" || o.status === "Waiter Approved" || o.status === "Preparing" || o.status === "Cooking");
   const readyOrders = orders.filter(o => o.status === "Ready");
 
+  if (!isMounted) return null;
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 text-slate-800 dark:text-slate-100 flex flex-col font-sans">
       
@@ -175,6 +279,17 @@ export default function WaiterDashboard() {
         </div>
         <div className="flex items-center gap-4">
           <span className="text-xs text-slate-500 font-semibold hidden sm:inline">Logged in as waiter@cafe.com</span>
+          <button
+            onClick={() => {
+              setNewOrderTable("T1");
+              setNewOrderCart([]);
+              setMenuSearch("");
+              setShowPlaceOrderModal(true);
+            }}
+            className="rounded-xl bg-brand-500 hover:bg-brand-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
+          >
+            <span>+</span> Place Order
+          </button>
           <button
             onClick={handleLogout}
             disabled={loggingOut}
@@ -442,7 +557,251 @@ export default function WaiterDashboard() {
                 >
                   Approve & Send 🍳
                 </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+      )}
+      {/* Place Order Modal */}
+      {showPlaceOrderModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-scale-in">
+          <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-slate-850 p-6 rounded-3xl shadow-xl w-full max-w-4xl flex flex-col max-h-[90vh] text-left">
+            
+            {/* Modal Header */}
+            <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 flex-none">
+              <div>
+                <h3 className="font-extrabold text-sm text-slate-900 dark:text-white">🛎️ Place Order on Behalf of Customer</h3>
+                <p className="text-[10px] text-slate-400">Select a table, filter by category, and add menu items for direct kitchen routing.</p>
               </div>
+              <button
+                onClick={() => setShowPlaceOrderModal(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-sm font-black cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Core Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 overflow-hidden flex-grow">
+              
+              {/* Left & Middle Column (8 cols): Table, Search & Two-Column Category Menu picker */}
+              <div className="lg:col-span-8 flex flex-col space-y-4 overflow-hidden">
+                
+                {/* Table Select + Search Bar */}
+                <div className="flex gap-3 items-center flex-none bg-slate-50 dark:bg-zinc-955 p-3 rounded-2xl border border-slate-200/50 dark:border-slate-850">
+                  <div className="w-1/3">
+                    <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1">Dine-In Table</label>
+                    <select
+                      value={newOrderTable}
+                      onChange={(e) => setNewOrderTable(e.target.value)}
+                      className="w-full text-xs font-bold px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-zinc-900 focus:outline-none focus:ring-1 focus:ring-brand-500 text-slate-800 dark:text-slate-200"
+                    >
+                      {Array.from({ length: 20 }, (_, i) => `T${i + 1}`).map(t => (
+                        <option key={t} value={t}>Table {t.replace("T", "")}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="w-2/3">
+                    <label className="block text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1">Search Menu Items</label>
+                    <input
+                      type="text"
+                      placeholder="Type dish name or category to search..."
+                      value={menuSearch}
+                      onChange={(e) => {
+                        setMenuSearch(e.target.value);
+                        if (e.target.value !== "" && activeCategory !== "All") {
+                          setActiveCategory("All"); // Reset to global search if typing
+                        }
+                      }}
+                      className="w-full text-xs font-semibold px-3.5 py-2 border border-slate-200 dark:border-slate-800 rounded-xl bg-white dark:bg-zinc-900 focus:outline-none focus:ring-1 focus:ring-brand-500 text-slate-800 dark:text-slate-200"
+                    />
+                  </div>
+                </div>
+
+                {/* Two-Column Category selector + Dishes List */}
+                <div className="grid grid-cols-12 gap-4 flex-grow overflow-hidden">
+                  
+                  {/* Category Sidebar Navigation */}
+                  <div className="col-span-4 bg-slate-50 dark:bg-zinc-955 border border-slate-200/50 dark:border-slate-850 p-2 rounded-2xl overflow-y-auto space-y-1.5 no-scrollbar">
+                    <button
+                      type="button"
+                      onClick={() => setActiveCategory("All")}
+                      className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        activeCategory === "All"
+                          ? "bg-brand-500 text-white shadow-sm"
+                          : "text-slate-500 hover:bg-slate-100 dark:hover:bg-zinc-900 hover:text-slate-800"
+                      }`}
+                    >
+                      📖 All Dishes
+                    </button>
+                    {categories.map((cat) => (
+                      <button
+                        key={cat._id}
+                        type="button"
+                        onClick={() => setActiveCategory(cat.name)}
+                        className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                          activeCategory.toLowerCase() === cat.name.toLowerCase()
+                            ? "bg-brand-500 text-white shadow-sm"
+                            : "text-slate-500 hover:bg-slate-100 dark:hover:bg-zinc-900 hover:text-slate-800"
+                        }`}
+                      >
+                        🏷️ {cat.name}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Filtered Dishes Grid scrollable viewport with images */}
+                  <div className="col-span-8 overflow-y-auto pr-1 no-scrollbar">
+                    {menuItems.filter(item => {
+                      const matchesSearch = item.name.toLowerCase().includes(menuSearch.toLowerCase()) || 
+                                            item.category.toLowerCase().includes(menuSearch.toLowerCase());
+                      const matchesCategory = activeCategory === "All" || 
+                                              item.category.toLowerCase() === activeCategory.toLowerCase();
+                      return matchesSearch && matchesCategory;
+                    }).length > 0 ? (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {menuItems.filter(item => {
+                          const matchesSearch = item.name.toLowerCase().includes(menuSearch.toLowerCase()) || 
+                                                item.category.toLowerCase().includes(menuSearch.toLowerCase());
+                          const matchesCategory = activeCategory === "All" || 
+                                                  item.category.toLowerCase() === activeCategory.toLowerCase();
+                          return matchesSearch && matchesCategory;
+                        }).map((item) => {
+                          const qtyInCart = newOrderCart.find(i => i._id === item._id)?.qty || 0;
+                          return (
+                            <div key={item._id} className="bg-slate-50 dark:bg-zinc-955 border border-slate-150 dark:border-slate-850 rounded-2xl overflow-hidden flex flex-col justify-between hover:scale-[1.02] transition-all text-xs shadow-3xs group">
+                              
+                              {/* Dish Image container */}
+                              <div className="relative h-20 sm:h-24 w-full bg-slate-100 dark:bg-zinc-900 overflow-hidden flex-none">
+                                {item.image ? (
+                                  <img
+                                    src={item.image}
+                                    alt={item.name}
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-all duration-300"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full bg-gradient-to-br from-slate-100 to-slate-200 dark:from-zinc-900 dark:to-zinc-800 flex items-center justify-center text-2xl select-none">
+                                    🍔
+                                  </div>
+                                )}
+                                
+                                {/* Veg/Non-Veg tag */}
+                                <span className={`absolute top-2 left-2 inline-flex items-center justify-center w-4 h-4 border bg-white dark:bg-zinc-900 rounded-sm font-black text-[9px] ${
+                                  item.isVeg ? "border-emerald-500 text-emerald-500" : "border-red-500 text-red-500"
+                                }`}>
+                                  {item.isVeg ? "V" : "N"}
+                                </span>
+                                
+                                {/* Price tag */}
+                                <span className="absolute bottom-2 right-2 bg-black/75 backdrop-blur-xs text-white text-[9px] font-black px-1.5 py-0.5 rounded-md">
+                                  ${item.price.toFixed(2)}
+                                </span>
+                              </div>
+
+                              {/* Content details */}
+                              <div className="p-2 flex-grow flex flex-col justify-between space-y-1.5 text-left">
+                                <div className="space-y-0.5">
+                                  <h4 className="font-extrabold text-[10px] sm:text-[11px] text-slate-900 dark:text-white line-clamp-1 leading-tight">{item.name}</h4>
+                                  <p className="text-[9px] text-slate-400 font-semibold">{item.category}</p>
+                                </div>
+
+                                <div className="pt-1 flex-none">
+                                  {qtyInCart > 0 ? (
+                                    <div className="flex items-center justify-between bg-brand-500 text-white rounded-xl p-0.5 font-bold shadow-xs">
+                                      <button
+                                        type="button"
+                                        onClick={() => removeFromNewOrderCart(item._id)}
+                                        className="w-5 h-5 flex items-center justify-center hover:bg-white/20 rounded-md text-xs font-black"
+                                      >
+                                        -
+                                      </button>
+                                      <span className="text-[10px] select-none">{qtyInCart}</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => addToNewOrderCart(item)}
+                                        className="w-5 h-5 flex items-center justify-center hover:bg-white/20 rounded-md text-xs font-black"
+                                      >
+                                        +
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => addToNewOrderCart(item)}
+                                      className="w-full py-1.5 bg-slate-900 hover:bg-slate-850 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200 text-white rounded-xl text-[9px] font-extrabold shadow-3xs cursor-pointer text-center"
+                                    >
+                                      Add +
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-center text-slate-400 py-16 text-xs bg-slate-50 dark:bg-zinc-955 rounded-2xl">No dishes found in category matching filter.</p>
+                    )}
+                  </div>
+
+                </div>
+
+              </div>
+
+              {/* Right Column (4 cols): Cart summary */}
+              <div className="lg:col-span-4 flex flex-col border-t lg:border-t-0 lg:border-l border-slate-150 dark:border-slate-800 lg:pl-6 pt-4 lg:pt-0 overflow-hidden">
+                <h4 className="font-extrabold text-xs text-slate-800 dark:text-slate-200 flex-none pb-3 border-b border-slate-100 dark:border-slate-800/80">📋 Selected Items Summary</h4>
+                
+                <div className="overflow-y-auto flex-grow space-y-2.5 py-3 pr-1 no-scrollbar">
+                  {newOrderCart.length > 0 ? (
+                    newOrderCart.map((i) => (
+                      <div key={i._id} className="flex justify-between items-center text-xs">
+                        <div className="text-left">
+                          <p className="font-bold text-slate-800 dark:text-slate-200 leading-tight">{i.name}</p>
+                          <span className="text-[10px] text-slate-400 font-semibold">{i.qty} x ${i.price.toFixed(2)}</span>
+                        </div>
+                        <span className="font-black text-slate-900 dark:text-white">${(i.price * i.qty).toFixed(2)}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full py-12 text-slate-400 text-center space-y-2">
+                      <span className="text-2xl">🛒</span>
+                      <p className="text-[11px]">Your order list is empty. Add dishes from the categories picker on the left.</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="border-t border-slate-100 dark:border-slate-800 pt-3 flex-none space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[11px] font-extrabold text-slate-400 tracking-wider uppercase">Dine-In {newOrderTable.replace("T", "Table ")}</span>
+                    <span className="text-base font-black text-slate-900 dark:text-white">
+                      Total: ${newOrderCart.reduce((acc, curr) => acc + curr.price * curr.qty, 0).toFixed(2)}
+                    </span>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowPlaceOrderModal(false)}
+                      className="flex-1 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl font-bold text-xs hover:bg-slate-50 cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      disabled={placingOrder || newOrderCart.length === 0}
+                      onClick={handlePlaceOrderBehalf}
+                      className="flex-1 py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl font-bold text-xs shadow-md disabled:opacity-50 transition-all cursor-pointer"
+                    >
+                      {placingOrder ? "Placing..." : "Confirm & Send 🍳"}
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+
             </div>
 
           </div>

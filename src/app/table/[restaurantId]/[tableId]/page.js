@@ -2,14 +2,16 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { QrCodeIcon, StarIcon, ClockIcon, ChefHatIcon, CheckCircleIcon, SparklesIcon } from "../../../components/Icons";
+import { QrCodeIcon, StarIcon, ClockIcon, ChefHatIcon, CheckCircleIcon, SparklesIcon } from "../../../../components/Icons";
 
 export default function TableMenuPage() {
   const params = useParams();
+  const restaurantId = params.restaurantId;
   const tableId = params.tableId || "T1"; // e.g. T3
 
   const [menuItems, setMenuItems] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [restaurantProfile, setRestaurantProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const [activeCategory, setActiveCategory] = useState("all");
@@ -20,14 +22,15 @@ export default function TableMenuPage() {
   const [orderState, setOrderState] = useState("idle"); // idle -> placing -> confirmed
   const [submittedOrder, setSubmittedOrder] = useState(null);
 
-  // Fetch menu and categories from database
+  // Fetch menu, categories, and restaurant profile from database
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [menuRes, catRes] = await Promise.all([
-          fetch("/api/menu"),
-          fetch("/api/categories")
+        const [menuRes, catRes, profileRes] = await Promise.all([
+          fetch(`/api/menu?restaurantId=${restaurantId}`),
+          fetch(`/api/categories?restaurantId=${restaurantId}`),
+          fetch(`/api/restaurants/${restaurantId}`)
         ]);
 
         if (menuRes.ok && catRes.ok) {
@@ -36,14 +39,21 @@ export default function TableMenuPage() {
           setMenuItems(menuData);
           setCategories([{ name: "All Dishes" }, ...catData]);
         }
+
+        if (profileRes && profileRes.ok) {
+          const profileData = await profileRes.json();
+          setRestaurantProfile(profileData);
+        }
       } catch (err) {
         console.error("Error loading menu data:", err);
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
-  }, []);
+    if (restaurantId) {
+      fetchData();
+    }
+  }, [restaurantId]);
 
   const addToCart = (item) => {
     setCart((prev) => {
@@ -84,7 +94,8 @@ export default function TableMenuPage() {
         body: JSON.stringify({
           tableId,
           items: itemsPayload,
-          total
+          total,
+          restaurantId: restaurantId || ""
         })
       });
 
@@ -131,6 +142,17 @@ export default function TableMenuPage() {
     );
   }
 
+  // Set brand theme color classes dynamically based on restaurant config
+  const themeAccentBg = {
+    orange: "from-brand-500 to-amber-500",
+    red: "from-red-600 to-rose-500",
+    green: "from-emerald-500 to-teal-500",
+    blue: "from-blue-600 to-sky-500",
+    charcoal: "from-slate-700 to-slate-900",
+  };
+
+  const selectedThemeColor = restaurantProfile?.themeColor || "orange";
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-zinc-900 flex flex-col items-center justify-start text-slate-800 dark:text-slate-200 font-sans pb-28">
       
@@ -143,7 +165,10 @@ export default function TableMenuPage() {
             </span>
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
           </div>
-          <h1 className="text-lg font-bold text-slate-900 dark:text-white mt-1">Cafe Aroma ☕</h1>
+          <h1 className="text-lg font-bold text-slate-900 dark:text-white mt-1">
+            <span className="mr-1">{restaurantProfile?.logoEmoji || "🍽️"}</span>
+            {restaurantProfile?.name || "Restaurant Menu"}
+          </h1>
         </div>
         <div className="flex items-center gap-1 text-[11px] text-amber-500 bg-amber-50 dark:bg-amber-950/20 px-2.5 py-1 rounded-full font-bold">
           <StarIcon className="w-3.5 h-3.5" /> 4.9 (120+)
@@ -254,7 +279,7 @@ export default function TableMenuPage() {
             <div className="w-14 h-14 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
             <h3 className="text-lg font-bold text-slate-900 dark:text-white">Transmitting Order...</h3>
             <p className="text-xs text-slate-400 max-w-xs mx-auto">
-              Connecting table {tableId} session directly to kitchendisplay display terminal #1.
+              Connecting table {tableId} session directly to kitchen display display terminal #1.
             </p>
           </div>
         )}
