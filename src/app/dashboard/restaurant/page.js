@@ -3,7 +3,31 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import QRCode from "qrcode";
 import { QrCodeIcon, ChefHatIcon, TableIcon, ClockIcon, ChartIcon, CheckCircleIcon, SparklesIcon, MailIcon, PhoneIcon, MapPinIcon } from "../../../components/Icons";
+
+const QRCodeImage = ({ value }) => {
+  const [src, setSrc] = useState("");
+
+  useEffect(() => {
+    if (!value) return;
+    QRCode.toDataURL(value, { margin: 1, width: 256 })
+      .then((url) => setSrc(url))
+      .catch((err) => console.error("QR Code generation error:", err));
+  }, [value]);
+
+  if (!src) {
+    return <div className="w-full h-full bg-slate-100 dark:bg-zinc-800 animate-pulse rounded-2xl" />;
+  }
+
+  return (
+    <img
+      src={src}
+      alt="QR Code"
+      className="w-full h-full object-contain rounded-2xl"
+    />
+  );
+};
 
 export default function RestaurantDashboard() {
   const router = useRouter();
@@ -936,9 +960,9 @@ export default function RestaurantDashboard() {
                         <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Table Session ID: {table.id}</span>
                       </div>
 
-                      {/* Mock QR SVG representation */}
+                      {/* Real dynamic QR Code representation */}
                       <div className="w-28 h-28 bg-white p-2 rounded-2xl border border-slate-250/70 shadow-inner flex items-center justify-center relative group">
-                        <QrCodeIcon className="w-full h-full text-slate-900" />
+                        <QRCodeImage value={table.url} />
                         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center rounded-2xl transition-opacity duration-200">
                           <Link
                             href={table.url}
