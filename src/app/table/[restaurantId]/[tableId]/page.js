@@ -22,6 +22,38 @@ export default function TableMenuPage() {
   const [orderState, setOrderState] = useState("idle"); // idle -> placing -> confirmed
   const [submittedOrder, setSubmittedOrder] = useState(null);
 
+  const [welcomeDismissed, setWelcomeDismissed] = useState(false);
+
+  const getCurrencySymbol = () => {
+    const code = restaurantProfile?.currency || "INR";
+    const symbols = {
+      INR: "₹",
+      USD: "$",
+      EUR: "€",
+      GBP: "£",
+      AED: "د.إ",
+    };
+    return symbols[code] || "₹";
+  };
+
+  const enterFullscreenAndDismiss = () => {
+    const docEl = document.documentElement;
+    const requestFS = docEl.requestFullscreen || docEl.webkitRequestFullscreen || docEl.mozRequestFullScreen || docEl.msRequestFullscreen;
+    
+    if (requestFS) {
+      requestFS.call(docEl)
+        .then(() => {
+          setWelcomeDismissed(true);
+        })
+        .catch((err) => {
+          console.warn("Fullscreen request blocked by browser policy:", err);
+          setWelcomeDismissed(true);
+        });
+    } else {
+      setWelcomeDismissed(true);
+    }
+  };
+
   // Fetch menu, categories, and restaurant profile from database
   useEffect(() => {
     const fetchData = async () => {
@@ -156,6 +188,47 @@ export default function TableMenuPage() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-zinc-900 flex flex-col items-center justify-start text-slate-800 dark:text-slate-200 font-sans pb-28">
       
+      {/* Immersive Welcome Splash Overlay */}
+      {!welcomeDismissed && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-zinc-950/95 backdrop-blur-md p-6 text-center select-none animate-fade-in">
+          <div className="max-w-xs space-y-6 animate-scale-in">
+            {/* Logo/Icon with Pulsing Glow */}
+            <div className="relative mx-auto w-24 h-24 rounded-full bg-gradient-to-tr from-brand-500 to-amber-500 flex items-center justify-center shadow-lg shadow-brand-500/25 animate-pulse overflow-hidden">
+              {restaurantProfile?.logo ? (
+                <img
+                  src={restaurantProfile.logo}
+                  alt="Logo"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-4xl">{restaurantProfile?.logoEmoji || "🍽️"}</span>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <span className="text-[10px] font-black tracking-widest text-brand-500 uppercase bg-brand-500/10 px-3 py-1 rounded-full">
+                Table {tableId}
+              </span>
+              <h2 className="text-2xl font-black text-white leading-tight">
+                {restaurantProfile?.name || "Welcome to our Restaurant"}
+              </h2>
+              <p className="text-xs text-zinc-400 max-w-xs">
+                Scan successful! Tap below to open our interactive digital menu in full screen.
+              </p>
+            </div>
+
+            <button
+              onClick={enterFullscreenAndDismiss}
+              className="w-full py-4 rounded-2xl bg-gradient-to-r from-brand-500 to-amber-500 text-white font-extrabold text-sm shadow-lg shadow-brand-500/20 active:scale-95 transition-all cursor-pointer"
+            >
+              Explore Menu 🍽️
+            </button>
+            
+            <p className="text-[9px] text-zinc-500">Powered by QuickBite OS</p>
+          </div>
+        </div>
+      )}
+      
       {/* Table Title Header */}
       <div className="w-full bg-white dark:bg-zinc-950 px-4 pt-6 pb-4 border-b border-slate-150 dark:border-slate-850 shadow-xs max-w-lg mx-auto flex items-center justify-between sticky top-0 z-20">
         <div className="text-left">
@@ -165,8 +238,16 @@ export default function TableMenuPage() {
             </span>
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
           </div>
-          <h1 className="text-lg font-bold text-slate-900 dark:text-white mt-1">
-            <span className="mr-1">{restaurantProfile?.logoEmoji || "🍽️"}</span>
+          <h1 className="text-lg font-bold text-slate-900 dark:text-white mt-1 flex items-center gap-2">
+            {restaurantProfile?.logo ? (
+              <img
+                src={restaurantProfile.logo}
+                alt="Logo"
+                className="w-6 h-6 rounded-lg object-cover border border-slate-200/50 dark:border-slate-805"
+              />
+            ) : (
+              <span className="mr-0.5">{restaurantProfile?.logoEmoji || "🍽️"}</span>
+            )}
             {restaurantProfile?.name || "Restaurant Menu"}
           </h1>
         </div>
@@ -226,6 +307,17 @@ export default function TableMenuPage() {
                   return (
                     <div key={item._id} className="bg-white dark:bg-zinc-950 p-4 rounded-3xl border border-slate-200/50 dark:border-slate-800/80 shadow-xs flex justify-between gap-4 text-left relative overflow-hidden transition-all hover:scale-[1.01]">
                       
+                      {/* Left: Dish Image (if exists) */}
+                      {item.image && (
+                        <div className="w-20 h-20 rounded-2xl overflow-hidden flex-none border border-slate-200/50 dark:border-slate-800">
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+
                       <div className="flex-grow space-y-1.5">
                         <div className="flex items-center gap-2">
                           <span className={`inline-flex items-center justify-center w-4 h-4 border rounded-sm font-bold text-[9px] ${
@@ -239,7 +331,7 @@ export default function TableMenuPage() {
                         
                         <div className="flex items-center gap-4 text-[10px] text-slate-400 font-semibold pt-1">
                           <span className="flex items-center gap-1"><ClockIcon className="w-3.5 h-3.5 opacity-60" /> {item.prepTime} min prep</span>
-                          <span className="text-slate-900 dark:text-white font-extrabold text-xs">${item.price.toFixed(2)}</span>
+                          <span className="text-slate-900 dark:text-white font-extrabold text-xs">{getCurrencySymbol()}{item.price.toFixed(2)}</span>
                         </div>
                       </div>
 
@@ -305,14 +397,14 @@ export default function TableMenuPage() {
                 {submittedOrder.items.map((i, idx) => (
                   <div key={idx} className="flex justify-between text-xs font-medium">
                     <span className="text-slate-600 dark:text-slate-350">{i.qty}x {i.name}</span>
-                    <span className="font-bold text-slate-900 dark:text-white">${(i.price * i.qty).toFixed(2)}</span>
+                    <span className="font-bold text-slate-900 dark:text-white">{getCurrencySymbol()}{(i.price * i.qty).toFixed(2)}</span>
                   </div>
                 ))}
               </div>
 
               <div className="border-t border-slate-200/50 dark:border-slate-800 pt-2.5 flex justify-between font-black text-sm text-slate-900 dark:text-white">
                 <span>Total checkout</span>
-                <span>${submittedOrder.total.toFixed(2)}</span>
+                <span>{getCurrencySymbol()}{submittedOrder.total.toFixed(2)}</span>
               </div>
             </div>
 
@@ -341,7 +433,7 @@ export default function TableMenuPage() {
             <span className="text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
               {totalQty} {totalQty === 1 ? "ITEM" : "ITEMS"} IN CART
             </span>
-            <h5 className="font-black text-base">${cartTotal.toFixed(2)}</h5>
+            <h5 className="font-black text-base">{getCurrencySymbol()}{cartTotal.toFixed(2)}</h5>
           </div>
           <button
             onClick={handlePlaceOrder}

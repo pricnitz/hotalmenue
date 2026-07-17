@@ -20,7 +20,7 @@ export async function GET() {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { name, ownerName, email, password, userId, phone, address, gstNumber, planType, expiryDate, status } = body;
+    const { name, ownerName, email, password, userId, phone, address, gstNumber, planType, expiryDate, status, logo, currency } = body;
 
     if (!name || !ownerName || !email) {
       return NextResponse.json({ error: "Name, Owner Name, and Email are required fields" }, { status: 400 });
@@ -44,6 +44,8 @@ export async function POST(request) {
       expiryDate: expiryDate || new Date(Date.now() + 365*24*60*60*1000).toISOString().split("T")[0],
       status: status || "Active",
       logoEmoji: "🍽️",
+      logo: logo || "",
+      currency: currency || "INR",
       themeColor: "orange",
     };
 

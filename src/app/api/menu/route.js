@@ -23,7 +23,7 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { name, price, category, isVeg, isAvailable, prepTime, description, restaurantId } = body;
+    const { name, price, category, isVeg, isAvailable, prepTime, description, restaurantId, image } = body;
 
     if (!name || price === undefined || !category) {
       return NextResponse.json({ error: "Name, Price, and Category are required" }, { status: 400 });
@@ -42,6 +42,7 @@ export async function POST(request) {
       prepTime: parseInt(prepTime) || 10,
       description: description || "",
       restaurantId: restaurantId || "",
+      image: image || "",
     };
 
     const result = await collection.insertOne(newItem);

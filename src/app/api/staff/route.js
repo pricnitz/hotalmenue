@@ -15,11 +15,11 @@ export async function GET(request) {
     const db = client.db("hotelmenu");
     const collection = db.collection("users");
 
-    // Fetch staff members (waiter/kitchen) belonging to the restaurant
+    // Fetch staff members (waiter/kitchen/billing) belonging to the restaurant
     const staff = await collection
       .find({
         restaurantId: restaurantId,
-        role: { $in: ["waiter", "kitchen"] }
+        role: { $in: ["waiter", "kitchen", "billing"] }
       })
       .project({ password: 0 }) // Exclude passwords from response
       .toArray();
@@ -43,8 +43,8 @@ export async function POST(request) {
       );
     }
 
-    if (!["waiter", "kitchen"].includes(role)) {
-      return NextResponse.json({ error: "Invalid role. Must be 'waiter' or 'kitchen'" }, { status: 400 });
+    if (!["waiter", "kitchen", "billing"].includes(role)) {
+      return NextResponse.json({ error: "Invalid role. Must be 'waiter', 'kitchen', or 'billing'" }, { status: 400 });
     }
 
     const client = await clientPromise;

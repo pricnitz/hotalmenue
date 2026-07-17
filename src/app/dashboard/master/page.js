@@ -40,6 +40,15 @@ export default function MasterDashboard() {
     themeColor: "orange",
   });
 
+  // State for Billing Invoice details
+  const [billingForm, setBillingForm] = useState({
+    invoiceNo: "",
+    date: "",
+    amount: 79,
+    gstRate: 18,
+    discount: 0,
+  });
+
   // Fetch restaurants from API
   const fetchRestaurants = async () => {
     try {
@@ -161,6 +170,136 @@ export default function MasterDashboard() {
       themeColor: rest.themeColor || "orange",
     });
     setActiveModal("brand");
+  };
+
+  // 6. Open billing modal
+  const openBillingModal = (rest) => {
+    setSelectedRest(rest);
+    let basePrice = 79;
+    if (rest.planType === "Starter") basePrice = 29;
+    if (rest.planType === "Pro Enterprise") basePrice = 149;
+
+    setBillingForm({
+      invoiceNo: `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+      date: new Date().toISOString().split("T")[0],
+      amount: basePrice,
+      gstRate: 18,
+      discount: 0,
+    });
+    setActiveModal("billing");
+  };
+
+  const handlePrintInvoice = () => {
+    const printWindow = window.open("", "_blank");
+    const subtotal = billingForm.amount - billingForm.discount;
+    const gstVal = (subtotal * billingForm.gstRate) / 100;
+    const total = subtotal + gstVal;
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Invoice - ${selectedRest.name}</title>
+          <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #333; line-height: 1.5; }
+            .header { display: flex; justify-content: space-between; border-b: 2px solid #eee; padding-bottom: 20px; margin-bottom: 30px; }
+            .title { font-size: 24px; font-weight: 800; color: #f97316; }
+            .details { margin-bottom: 30px; display: flex; justify-content: space-between; }
+            .details div { width: 45%; }
+            table { width: 100%; border-collapse: collapse; margin-top: 30px; }
+            th { background: #f8fafc; text-align: left; padding: 12px; border-bottom: 2px solid #e2e8f0; font-size: 13px; font-weight: 700; text-transform: uppercase; color: #64748b; }
+            td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+            .total-section { margin-top: 30px; display: flex; flex-direction: column; align-items: flex-end; }
+            .total-row { display: flex; justify-content: space-between; width: 250px; padding: 6px 0; font-size: 14px; }
+            .total-row.grand { font-size: 18px; font-weight: 800; border-top: 2px solid #e2e8f0; padding-top: 12px; color: #10b981; }
+            .footer { margin-top: 60px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #eee; padding-top: 20px; }
+            @media print {
+              body { padding: 0; }
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div>
+              <div class="title">QuickBite OS</div>
+              <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">Premium Restaurant Management SaaS</p>
+            </div>
+            <div style="text-align: right;">
+              <h2 style="margin: 0; font-size: 18px;">INVOICE</h2>
+              <p style="margin: 4px 0 0 0; font-size: 12px; font-weight: 600; color: #64748b;">${billingForm.invoiceNo}</p>
+            </div>
+          </div>
+
+          <div class="details">
+            <div>
+              <strong style="color: #64748b; font-size: 11px; text-transform: uppercase;">Billed To:</strong>
+              <h3 style="margin: 6px 0 2px 0; font-size: 15px;">${selectedRest.name}</h3>
+              <p style="margin: 0; font-size: 13px; color: #475569;">Proprietor: ${selectedRest.ownerName}</p>
+              <p style="margin: 2px 0 0 0; font-size: 13px; color: #475569;">Email: ${selectedRest.email}</p>
+              <p style="margin: 2px 0 0 0; font-size: 13px; color: #475569;">Phone: ${selectedRest.phone}</p>
+              <p style="margin: 2px 0 0 0; font-size: 13px; color: #475569;">GSTIN: ${selectedRest.gstNumber || "GST-PENDING"}</p>
+            </div>
+            <div style="text-align: right;">
+              <strong style="color: #64748b; font-size: 11px; text-transform: uppercase;">Invoice Info:</strong>
+              <p style="margin: 6px 0 0 0; font-size: 13px;"><strong>Date:</strong> ${billingForm.date}</p>
+              <p style="margin: 2px 0 0 0; font-size: 13px;"><strong>Payment Status:</strong> Paid</p>
+              <p style="margin: 2px 0 0 0; font-size: 13px;"><strong>Licence Period:</strong> 1 Year</p>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th style="text-align: right;">Unit Price</th>
+                <th style="text-align: right;">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <strong>QuickBite Digital QR Menu License</strong><br/>
+                  <span style="font-size: 11px; color: #64748b;">Access tier: ${selectedRest.planType} Plan. Live table manager & active waiter portals.</span>
+                </td>
+                <td style="text-align: right; vertical-align: top;">$${billingForm.amount.toFixed(2)}</td>
+                <td style="text-align: right; vertical-align: top;">$${billingForm.amount.toFixed(2)}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="total-section">
+            <div class="total-row">
+              <span>Subtotal:</span>
+              <span>$${billingForm.amount.toFixed(2)}</span>
+            </div>
+            ${billingForm.discount > 0 ? `
+            <div class="total-row" style="color: #ef4444;">
+              <span>Discount:</span>
+              <span>-$${billingForm.discount.toFixed(2)}</span>
+            </div>
+            ` : ""}
+            <div class="total-row">
+              <span>GST (${billingForm.gstRate}%):</span>
+              <span>$${gstVal.toFixed(2)}</span>
+            </div>
+            <div class="total-row grand">
+              <span>Total Paid:</span>
+              <span>$${total.toFixed(2)}</span>
+            </div>
+          </div>
+
+          <div class="footer">
+            <p>Thank you for choosing QuickBite OS to power your dining experience!</p>
+            <p>This is a system generated invoice and requires no signature.</p>
+          </div>
+
+          <script>
+            window.onload = function() { window.print(); }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   // Submit branding via PUT
@@ -385,13 +524,19 @@ export default function MasterDashboard() {
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => openBrandingModal(rest)}
-                            className="bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                            className="bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-350 rounded-lg px-2.5 py-1.5 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
                           >
                             Brand Config
                           </button>
                           <button
+                            onClick={() => openBillingModal(rest)}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg px-2.5 py-1.5 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                          >
+                            Generate Bill
+                          </button>
+                          <button
                             onClick={() => openStatsModal(rest)}
-                            className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200 text-white rounded-lg px-3 py-1.5 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                            className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200 text-white rounded-lg px-2.5 py-1.5 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
                           >
                             View Stats
                           </button>
@@ -765,6 +910,141 @@ export default function MasterDashboard() {
                 <p><span className="font-semibold text-slate-800 dark:text-slate-350">License Expiry:</span> {selectedRest.expiryDate}</p>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+      {/* MODAL 4: GENERATE BILL */}
+      {activeModal === "billing" && selectedRest && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fade-in">
+          <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 max-w-4xl w-full shadow-2xl space-y-6 text-left flex flex-col md:flex-row gap-6 max-h-[90vh] overflow-y-auto">
+            
+            {/* Left: Billing Fields configuration */}
+            <div className="flex-1 space-y-4">
+              <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Generate Subscription Bill</h3>
+                  <p className="text-[10px] text-slate-400 font-medium">Configure parameters for {selectedRest.name}'s invoice.</p>
+                </div>
+              </div>
+
+              <div className="space-y-3 text-xs">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-slate-500 font-bold uppercase tracking-wider text-[10px]">Invoice Number</label>
+                    <input
+                      type="text"
+                      value={billingForm.invoiceNo}
+                      onChange={(e) => setBillingForm({ ...billingForm, invoiceNo: e.target.value })}
+                      className="block w-full rounded-xl border border-slate-200 dark:border-slate-850 bg-slate-50 dark:bg-zinc-950 px-3.5 py-2 text-sm focus:border-brand-500 focus:outline-none"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-slate-500 font-bold uppercase tracking-wider text-[10px]">Invoice Date</label>
+                    <input
+                      type="date"
+                      value={billingForm.date}
+                      onChange={(e) => setBillingForm({ ...billingForm, date: e.target.value })}
+                      className="block w-full rounded-xl border border-slate-200 dark:border-slate-850 bg-slate-50 dark:bg-zinc-950 px-3.5 py-2 text-sm focus:border-brand-500 focus:outline-none text-slate-700 dark:text-slate-300"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-slate-500 font-bold uppercase tracking-wider text-[10px]">Base Plan Amount ($)</label>
+                  <input
+                    type="number"
+                    value={billingForm.amount}
+                    onChange={(e) => setBillingForm({ ...billingForm, amount: parseFloat(e.target.value) || 0 })}
+                    className="block w-full rounded-xl border border-slate-200 dark:border-slate-850 bg-slate-50 dark:bg-zinc-950 px-3.5 py-2 text-sm focus:border-brand-500 focus:outline-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-slate-500 font-bold uppercase tracking-wider text-[10px]">Discount ($)</label>
+                    <input
+                      type="number"
+                      value={billingForm.discount}
+                      onChange={(e) => setBillingForm({ ...billingForm, discount: parseFloat(e.target.value) || 0 })}
+                      className="block w-full rounded-xl border border-slate-200 dark:border-slate-850 bg-slate-50 dark:bg-zinc-950 px-3.5 py-2 text-sm focus:border-brand-500 focus:outline-none"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-slate-500 font-bold uppercase tracking-wider text-[10px]">GST Rate (%)</label>
+                    <input
+                      type="number"
+                      value={billingForm.gstRate}
+                      onChange={(e) => setBillingForm({ ...billingForm, gstRate: parseFloat(e.target.value) || 0 })}
+                      className="block w-full rounded-xl border border-slate-200 dark:border-slate-850 bg-slate-50 dark:bg-zinc-950 px-3.5 py-2 text-sm focus:border-brand-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                  <button
+                    onClick={handlePrintInvoice}
+                    className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition-colors cursor-pointer text-center"
+                  >
+                    Print & Send Invoice 📄
+                  </button>
+                  <button
+                    onClick={() => setActiveModal(null)}
+                    className="w-full py-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-350 font-bold text-xs transition-colors cursor-pointer text-center"
+                  >
+                    Close Invoicing Panel
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: Premium Live Invoice Preview */}
+            <div className="w-full md:w-[380px] bg-slate-50 dark:bg-zinc-950 border border-slate-200/50 dark:border-slate-800/80 p-5 rounded-2xl flex flex-col justify-between shadow-inner">
+              <div className="space-y-4">
+                <div className="flex justify-between items-start pb-3 border-b border-slate-200/60 dark:border-slate-800">
+                  <div>
+                    <h4 className="text-xs font-black text-brand-500 uppercase tracking-wide">QuickBite Invoice</h4>
+                    <p className="text-[9px] text-slate-400 font-medium">SaaS License Receipt</p>
+                  </div>
+                  <div className="text-right text-[10px] text-slate-400 font-mono">
+                    <p>{billingForm.invoiceNo}</p>
+                    <p>{billingForm.date}</p>
+                  </div>
+                </div>
+
+                <div className="text-xs space-y-1">
+                  <p className="text-[10px] text-slate-400 font-extrabold uppercase">Billed To:</p>
+                  <p className="font-extrabold text-slate-900 dark:text-white">{selectedRest.name}</p>
+                  <p className="text-[11px] text-slate-500 font-medium">Proprietor: {selectedRest.ownerName}</p>
+                  <p className="text-[10px] text-slate-400 font-mono">{selectedRest.email}</p>
+                  <p className="text-[10px] text-slate-400 font-mono">GST: {selectedRest.gstNumber || "GST-PENDING"}</p>
+                </div>
+
+                <div className="border-t border-b border-dashed border-slate-200 dark:border-slate-800 py-3 text-xs space-y-2">
+                  <div className="flex justify-between font-semibold">
+                    <span className="text-slate-500">{selectedRest.planType} License Fee</span>
+                    <span className="text-slate-800 dark:text-white">${billingForm.amount.toFixed(2)}</span>
+                  </div>
+                  {billingForm.discount > 0 && (
+                    <div className="flex justify-between text-red-500 font-medium">
+                      <span>Discount</span>
+                      <span>-${billingForm.discount.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-slate-500 font-medium">
+                    <span>GST ({billingForm.gstRate}%)</span>
+                    <span>${(((billingForm.amount - billingForm.discount) * billingForm.gstRate) / 100).toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 flex justify-between items-baseline">
+                <span className="text-xs font-bold text-slate-500">Total Paid:</span>
+                <span className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                  ${((billingForm.amount - billingForm.discount) * (1 + billingForm.gstRate / 100)).toFixed(2)}
+                </span>
+              </div>
+            </div>
+
           </div>
         </div>
       )}

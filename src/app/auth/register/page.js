@@ -13,7 +13,27 @@ export default function RegisterPage() {
     phone: "",
     subdomain: "",
     cuisine: "cafe",
+    logo: "",
+    currency: "INR",
   });
+
+  const handleLogoUpload = (file) => {
+    if (!file) return;
+    const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      alert("Only PNG, JPG, JPEG, and WEBP images are allowed!");
+      return;
+    }
+    if (file.size > 1024 * 1024) {
+      alert("Image size must be less than 1 MB!");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setForm((prev) => ({ ...prev, logo: reader.result }));
+    };
+    reader.readAsDataURL(file);
+  };
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [generatedCredentials, setGeneratedCredentials] = useState(null);
@@ -41,6 +61,8 @@ export default function RegisterPage() {
           gstNumber: "GST-PENDING",
           planType: "Growth",
           status: "Active",
+          logo: form.logo,
+          currency: form.currency,
         };
         
         const res = await fetch("/api/restaurants", {
@@ -175,6 +197,7 @@ export default function RegisterPage() {
                   />
                 </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label htmlFor="cuisine" className="block text-xs font-bold uppercase tracking-wider text-slate-500">
                     Cuisine Type
@@ -193,6 +216,31 @@ export default function RegisterPage() {
                     <option value="bar">Bar / Pub / Lounge</option>
                   </select>
                 </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Restaurant Logo
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="file"
+                      accept="image/png, image/jpeg, image/jpg, image/webp"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleLogoUpload(file);
+                      }}
+                      className="block w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 dark:file:bg-zinc-800 dark:file:text-slate-350 cursor-pointer"
+                    />
+                    {form.logo && (
+                      <img
+                        src={form.logo}
+                        alt="Logo Preview"
+                        className="w-10 h-10 rounded-xl object-cover border border-slate-200 dark:border-slate-800 flex-none"
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
               </div>
 
               <div className="space-y-1">
@@ -243,6 +291,28 @@ export default function RegisterPage() {
                     placeholder="+1 (555) 000-0000"
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label htmlFor="currency" className="block text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Menu Currency
+                  </label>
+                  <select
+                    id="currency"
+                    name="currency"
+                    value={form.currency}
+                    onChange={handleInputChange}
+                    className="block w-full px-3 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-zinc-900 shadow-xs focus:outline-none focus:ring-brand-500 focus:border-brand-500 text-sm text-slate-700 dark:text-slate-350"
+                  >
+                    <option value="INR">INR (₹) - Indian Rupee</option>
+                    <option value="USD">USD ($) - US Dollar</option>
+                    <option value="EUR">EUR (€) - Euro</option>
+                    <option value="GBP">GBP (£) - British Pound</option>
+                    <option value="AED">AED (د.إ) - UAE Dirham</option>
+                  </select>
+                </div>
+                <div className="space-y-1 invisible sm:block"></div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -13,6 +13,19 @@ export default function WaiterDashboard() {
 
   // Ready Notification State
   const [notifiedReady, setNotifiedReady] = useState({}); // { [orderId]: true }
+  const [restaurantProfile, setRestaurantProfile] = useState(null);
+
+  const getCurrencySymbol = () => {
+    const code = restaurantProfile?.currency || "INR";
+    const symbols = {
+      INR: "₹",
+      USD: "$",
+      EUR: "€",
+      GBP: "£",
+      AED: "د.إ",
+    };
+    return symbols[code] || "₹";
+  };
 
   // New Order on Behalf States
   const [menuItems, setMenuItems] = useState([]);
@@ -82,6 +95,20 @@ export default function WaiterDashboard() {
     }
   };
 
+  const fetchRestaurantProfile = async () => {
+    try {
+      const restId = localStorage.getItem("restaurantId") || "";
+      if (!restId) return;
+      const res = await fetch(`/api/restaurants/${restId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setRestaurantProfile(data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch restaurant profile in waiter portal:", e);
+    }
+  };
+
   const addToNewOrderCart = (item) => {
     setNewOrderCart((prev) => {
       const existing = prev.find((i) => i._id === item._id);
@@ -143,6 +170,7 @@ export default function WaiterDashboard() {
 
   useEffect(() => {
     setIsMounted(true);
+    fetchRestaurantProfile();
     fetchOrders();
     fetchMenu();
     fetchCategories();
@@ -457,7 +485,7 @@ export default function WaiterDashboard() {
                             {order.items.map(i => `${i.qty}x ${i.name}`).join(", ")}
                           </p>
                         </div>
-                        <span className="font-black text-slate-900 dark:text-white">${order.total.toFixed(2)}</span>
+                        <span className="font-black text-slate-900 dark:text-white">{getCurrencySymbol()}{order.total.toFixed(2)}</span>
                       </div>
                     ))}
                   </div>
@@ -539,7 +567,7 @@ export default function WaiterDashboard() {
             <div className="flex justify-between items-center pt-4 border-t border-slate-100 dark:border-slate-800">
               <div>
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Recalculated Total</span>
-                <p className="text-lg font-black text-slate-900 dark:text-white mt-0.5">${getEditFormTotal().toFixed(2)}</p>
+                <p className="text-lg font-black text-slate-900 dark:text-white mt-0.5">{getCurrencySymbol()}{getEditFormTotal().toFixed(2)}</p>
               </div>
 
               <div className="flex gap-2">
@@ -695,7 +723,7 @@ export default function WaiterDashboard() {
                                 
                                 {/* Price tag */}
                                 <span className="absolute bottom-2 right-2 bg-black/75 backdrop-blur-xs text-white text-[9px] font-black px-1.5 py-0.5 rounded-md">
-                                  ${item.price.toFixed(2)}
+                                  {getCurrencySymbol()}{item.price.toFixed(2)}
                                 </span>
                               </div>
 
@@ -760,9 +788,9 @@ export default function WaiterDashboard() {
                       <div key={i._id} className="flex justify-between items-center text-xs">
                         <div className="text-left">
                           <p className="font-bold text-slate-800 dark:text-slate-200 leading-tight">{i.name}</p>
-                          <span className="text-[10px] text-slate-400 font-semibold">{i.qty} x ${i.price.toFixed(2)}</span>
+                          <span className="text-[10px] text-slate-400 font-semibold">{i.qty} x {getCurrencySymbol()}{i.price.toFixed(2)}</span>
                         </div>
-                        <span className="font-black text-slate-900 dark:text-white">${(i.price * i.qty).toFixed(2)}</span>
+                        <span className="font-black text-slate-900 dark:text-white">{getCurrencySymbol()}{(i.price * i.qty).toFixed(2)}</span>
                       </div>
                     ))
                   ) : (
@@ -777,7 +805,7 @@ export default function WaiterDashboard() {
                   <div className="flex justify-between items-center">
                     <span className="text-[11px] font-extrabold text-slate-400 tracking-wider uppercase">Dine-In {newOrderTable.replace("T", "Table ")}</span>
                     <span className="text-base font-black text-slate-900 dark:text-white">
-                      Total: ${newOrderCart.reduce((acc, curr) => acc + curr.price * curr.qty, 0).toFixed(2)}
+                      Total: {getCurrencySymbol()}{newOrderCart.reduce((acc, curr) => acc + curr.price * curr.qty, 0).toFixed(2)}
                     </span>
                   </div>
 

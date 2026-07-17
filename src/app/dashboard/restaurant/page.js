@@ -43,6 +43,8 @@ export default function RestaurantDashboard() {
     address: "Plot 42, Bandra Reclamation, Bandra West, Mumbai, MH 400050",
     gstNumber: "GST27AAACP9934B1Z3",
     logoEmoji: "☕",
+    logo: "",
+    currency: "INR",
     themeColor: "orange",
   });
 
@@ -70,10 +72,18 @@ export default function RestaurantDashboard() {
     isAvailable: true,
     prepTime: 12,
     description: "",
+    image: "",
   });
 
   // New Category Form State
   const [categoryName, setCategoryName] = useState("");
+
+  // Editing Category State
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [editCategoryName, setEditCategoryName] = useState("");
+
+  // Editing Menu Item State
+  const [editingMenuItem, setEditingMenuItem] = useState(null);
 
   // Staff Management State
   const [staff, setStaff] = useState([]);
@@ -86,6 +96,27 @@ export default function RestaurantDashboard() {
     role: "waiter",
   });
   const [editingStaff, setEditingStaff] = useState(null);
+
+  const getSubdomain = () => {
+    const fallback = profile.restaurantName
+      ? profile.restaurantName.toLowerCase().replace(/[^a-z0-9]/g, "")
+      : "restaurant";
+    if (!profile.address) return fallback;
+    const match = profile.address.match(/Subdomain:\s*([^\s\/]+)/i);
+    return match ? match[1] : fallback;
+  };
+
+  const getCurrencySymbol = () => {
+    const code = profile.currency || "INR";
+    const symbols = {
+      INR: "₹",
+      USD: "$",
+      EUR: "€",
+      GBP: "£",
+      AED: "د.إ",
+    };
+    return symbols[code] || "₹";
+  };
 
   const fetchRestaurantProfile = async () => {
     try {
@@ -103,6 +134,8 @@ export default function RestaurantDashboard() {
           address: data.address || "Plot 42, Bandra Reclamation, Bandra West, Mumbai, MH 400050",
           gstNumber: data.gstNumber || "GST27AAACP9934B1Z3",
           logoEmoji: data.logoEmoji || "☕",
+          logo: data.logo || "",
+          currency: data.currency || "INR",
           themeColor: data.themeColor || "orange",
         });
       }
@@ -126,11 +159,11 @@ export default function RestaurantDashboard() {
         const menuData = await menuRes.json();
         const catData = await catRes.json();
         const orderData = await orderRes.json();
-        
+
         setMenuItems(menuData);
         setCategories(catData);
         setOrders(orderData);
-        
+
         if (catData.length > 0 && !itemForm.category) {
           setItemForm(prev => ({ ...prev, category: catData[0].name }));
         }
@@ -344,6 +377,24 @@ export default function RestaurantDashboard() {
   };
 
   // Add Menu Item
+  const handleImageUpload = (file, callback) => {
+    if (!file) return;
+    const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      alert("Only PNG, JPG, JPEG, and WEBP images are allowed!");
+      return;
+    }
+    if (file.size > 1024 * 1024) {
+      alert("Image size must be less than 1 MB!");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      callback(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleAddMenuItem = async (e) => {
     e.preventDefault();
     if (!itemForm.name || !itemForm.price) return;
@@ -363,6 +414,7 @@ export default function RestaurantDashboard() {
           isAvailable: true,
           prepTime: 12,
           description: "",
+          image: "",
         });
         fetchDbData();
       } else {
@@ -376,25 +428,133 @@ export default function RestaurantDashboard() {
   // Toggle item availability via PUT
   const toggleItemAvailability = async (id, currentVal) => {
     try {
+      const item = menuItems.find((i) => i._id === id);
+      if (!item) return;
+
       const res = await fetch(`/api/menu/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isAvailable: !currentVal })
+        body: JSON.stringify({ ...item, isAvailable: !currentVal })
       });
       if (res.ok) {
-        // Wait, wait! We haven't created PUT in menu [id] route, let's fetch menu items again
-        // Actually, we can update it in local state to avoid server error if menu/[id] PUT doesn't exist
-        // Or we can create `/api/menu/[id]` later, but let's toggle it locally in memory for now
-        setMenuItems(prev => prev.map(item => item._id === id ? { ...item, isAvailable: !currentVal } : item));
+        setMenuItems(prev => prev.map(i => i._id === id ? { ...i, isAvailable: !currentVal } : i));
       }
     } catch (e) {
       console.error("Toggle item error:", e);
     }
   };
 
-  const handleProfileSubmit = (e) => {
+  // Delete Category
+  const handleDeleteCategory = async (id) => {
+    if (!confirm("Are you sure you want to delete this category? Dishes in this category will remain, but their category label will not be managed.")) return;
+    try {
+      const res = await fetch(`/api/categories/${id}`, {
+        method: "DELETE"
+      });
+      if (res.ok) {
+        fetchDbData();
+      } else {
+        alert("Failed to delete category");
+      }
+    } catch (e) {
+      console.error("Category delete error:", e);
+    }
+  };
+
+  // Update Category
+  const handleUpdateCategory = async (e) => {
     e.preventDefault();
-    alert("Profile configurations saved successfully!");
+    if (!editCategoryName) return;
+    try {
+      const res = await fetch(`/api/categories/${editingCategory._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: editCategoryName })
+      });
+      if (res.ok) {
+        setEditingCategory(null);
+        setEditCategoryName("");
+        fetchDbData();
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to update category");
+      }
+    } catch (e) {
+      console.error("Category update error:", e);
+    }
+  };
+
+  // Delete Menu Item
+  const handleDeleteMenuItem = async (id) => {
+    if (!confirm("Are you sure you want to delete this menu dish?")) return;
+    try {
+      const res = await fetch(`/api/menu/${id}`, {
+        method: "DELETE"
+      });
+      if (res.ok) {
+        fetchDbData();
+      } else {
+        alert("Failed to delete menu item");
+      }
+    } catch (e) {
+      console.error("Menu item delete error:", e);
+    }
+  };
+
+  // Update Menu Item
+  const handleUpdateMenuItem = async (e) => {
+    e.preventDefault();
+    if (!editingMenuItem.name || !editingMenuItem.price) return;
+    try {
+      const res = await fetch(`/api/menu/${editingMenuItem._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editingMenuItem)
+      });
+      if (res.ok) {
+        setEditingMenuItem(null);
+        fetchDbData();
+      } else {
+        alert("Failed to update menu item");
+      }
+    } catch (e) {
+      console.error("Menu item update error:", e);
+    }
+  };
+
+  const handleProfileSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const restId = localStorage.getItem("restaurantId");
+      if (!restId) return;
+
+      const payload = {
+        name: profile.restaurantName,
+        ownerName: profile.ownerName,
+        phone: profile.phone,
+        address: profile.address,
+        logo: profile.logo,
+        currency: profile.currency,
+        themeColor: profile.themeColor,
+      };
+
+      const res = await fetch(`/api/restaurants/${restId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        alert("Restaurant details updated successfully!");
+        fetchRestaurantProfile();
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to update profile details.");
+      }
+    } catch (e) {
+      console.error("Failed to update profile details:", e);
+      alert("Error: " + e.message);
+    }
   };
 
   const handlePasswordSubmit = (e) => {
@@ -416,10 +576,10 @@ export default function RestaurantDashboard() {
     setTimeout(() => setPasswordStatus(""), 4000);
   };
 
-    // Dynamic calculations for Widgets
+  // Dynamic calculations for Widgets
   const totalTables = generatedTables.length;
   const totalMenuItems = menuItems.length;
-  
+
   const activeOrders = orders.filter(o => o.status !== "Served" && o.status !== "Pending");
   const completedOrders = orders.filter(o => o.status === "Served");
 
@@ -521,12 +681,20 @@ export default function RestaurantDashboard() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 text-slate-800 dark:text-slate-100 flex flex-col font-sans">
-      
+
       {/* Dashboard Nav bar */}
       <header className="bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-slate-800 px-6 py-4 flex items-center justify-between shadow-xs">
         <div className="flex items-center gap-3">
-          <div className={`flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr ${themeAccentBg[profile.themeColor]} text-white shadow-sm`}>
-            <span className="text-lg leading-none">{profile.logoEmoji}</span>
+          <div className={`flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr ${themeAccentBg[profile.themeColor]} text-white shadow-sm overflow-hidden`}>
+            {profile.logo ? (
+              <img
+                src={profile.logo}
+                alt="Logo"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span className="text-lg leading-none">{profile.logoEmoji}</span>
+            )}
           </div>
           <span className="font-extrabold text-base tracking-tight">
             {profile.restaurantName}{" "}
@@ -549,11 +717,10 @@ export default function RestaurantDashboard() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                activeTab === tab.id
-                  ? "bg-white dark:bg-zinc-950 text-slate-900 dark:text-white shadow-xs"
-                  : "text-slate-500 hover:text-slate-800"
-              }`}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === tab.id
+                ? "bg-white dark:bg-zinc-950 text-slate-900 dark:text-white shadow-xs"
+                : "text-slate-500 hover:text-slate-800"
+                }`}
             >
               {tab.label}
             </button>
@@ -584,9 +751,8 @@ export default function RestaurantDashboard() {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 text-center py-2 px-3 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-              activeTab === tab.id ? "bg-slate-100 dark:bg-zinc-850 text-slate-900 dark:text-white" : "text-slate-500"
-            }`}
+            className={`flex-1 text-center py-2 px-3 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${activeTab === tab.id ? "bg-slate-100 dark:bg-zinc-850 text-slate-900 dark:text-white" : "text-slate-500"
+              }`}
           >
             {tab.label}
           </button>
@@ -595,7 +761,7 @@ export default function RestaurantDashboard() {
 
       {/* Main Content Area */}
       <main className="flex-grow p-6 space-y-8 max-w-7xl mx-auto w-full">
-        
+
         {/* Dynamic widgets row (Total Tables, Total Orders, Total Menu Items, Active Orders, Completed Orders) */}
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
           {[
@@ -675,20 +841,19 @@ export default function RestaurantDashboard() {
                                 ))}
                               </td>
                               <td className="p-4 text-sm">
-                                <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
-                                  t.status === "Ready" || t.status === "Ready to Serve"
-                                    ? "bg-emerald-100 text-emerald-850 dark:bg-emerald-950/40 dark:text-emerald-400"
-                                    : t.status === "Preparing" || t.status === "Cooking"
+                                <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${t.status === "Ready" || t.status === "Ready to Serve"
+                                  ? "bg-emerald-100 text-emerald-850 dark:bg-emerald-950/40 dark:text-emerald-400"
+                                  : t.status === "Preparing" || t.status === "Cooking"
                                     ? "bg-orange-100 text-orange-850 dark:bg-orange-950/40 dark:text-orange-400"
                                     : "bg-amber-100 text-amber-850 dark:bg-amber-950/40 dark:text-amber-400"
-                                }`}>
+                                  }`}>
                                   {t.status}
                                 </span>
                               </td>
                               <td className="p-4 text-xs font-semibold text-slate-400">
                                 {new Date(t.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </td>
-                              <td className="p-4 text-sm font-extrabold text-slate-900 dark:text-white">${t.total.toFixed(2)}</td>
+                              <td className="p-4 text-sm font-extrabold text-slate-900 dark:text-white">{getCurrencySymbol()}{t.total.toFixed(2)}</td>
                               <td className="p-4 text-right">
                                 <div className="flex items-center justify-end gap-2">
                                   {t.status === "Received" || t.status === "Waiter Approved" ? (
@@ -713,7 +878,7 @@ export default function RestaurantDashboard() {
                                       Serve & Settle ✓
                                     </button>
                                   )}
-                                  
+
                                   <button
                                     onClick={() => handleClearTicket(t._id)}
                                     className="bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 text-slate-500 rounded-lg px-2.5 py-1.5 text-xs font-bold hover:text-red-500"
@@ -740,10 +905,10 @@ export default function RestaurantDashboard() {
 
             {/* TAB 2: MENU CATALOG MANAGEMENT */}
             {activeTab === "menu" && (
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 text-left animate-fade-in">
-                
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 text-left animate-fade-in">
+
                 {/* Left side Forms */}
-                <div className="lg:col-span-4 space-y-6">
+                <div className="lg:col-span-3 space-y-6">
                   {/* Category Builder */}
                   <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-xs space-y-4">
                     <h3 className="font-bold text-sm text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">
@@ -765,22 +930,75 @@ export default function RestaurantDashboard() {
                         Add
                       </button>
                     </form>
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {categories.map((cat, i) => (
-                        <span key={i} className="bg-slate-100 dark:bg-zinc-800 text-[10px] font-bold text-slate-500 px-2 py-0.5 rounded-md uppercase">
-                          {cat.name}
-                        </span>
-                      ))}
+                    <div className="space-y-2 pt-2 border-t border-slate-150 dark:border-slate-800">
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Manage Categories</label>
+                      <div className="flex flex-col gap-2 max-h-[160px] overflow-y-auto pr-1 no-scrollbar text-xs">
+                        {categories.map((cat) => (
+                          <div key={cat._id} className="flex items-center justify-between bg-slate-50 dark:bg-zinc-950 p-2 rounded-xl border border-slate-150 dark:border-slate-850">
+                            {editingCategory && editingCategory._id === cat._id ? (
+                              <form onSubmit={handleUpdateCategory} className="flex items-center gap-1 w-full">
+                                <input
+                                  type="text"
+                                  required
+                                  value={editCategoryName}
+                                  onChange={(e) => setEditCategoryName(e.target.value)}
+                                  className="flex-grow rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-zinc-900 px-2 py-1 text-[11px] focus:outline-none text-slate-800 dark:text-slate-200"
+                                />
+                                <button
+                                  type="submit"
+                                  className="px-2 py-1 bg-emerald-500 text-white rounded-lg font-bold text-[10px] cursor-pointer"
+                                >
+                                  S
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingCategory(null)}
+                                  className="px-2 py-1 bg-slate-200 dark:bg-zinc-850 text-slate-600 dark:text-slate-400 rounded-lg font-bold text-[10px] cursor-pointer"
+                                >
+                                  C
+                                </button>
+                              </form>
+                            ) : (
+                              <>
+                                <span className="font-extrabold text-slate-700 dark:text-slate-300 uppercase text-[10px]">{cat.name}</span>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => {
+                                      setEditingCategory(cat);
+                                      setEditCategoryName(cat.name);
+                                    }}
+                                    className="text-slate-400 hover:text-brand-500 font-bold cursor-pointer text-[10px]"
+                                    title="Edit Category"
+                                  >
+                                    ✎
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteCategory(cat._id)}
+                                    className="text-slate-400 hover:text-red-500 font-bold cursor-pointer text-[10px]"
+                                    title="Delete Category"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
 
                   {/* Menu Item Builder */}
+
+                </div>
+
+                <div className="lg:col-span-3 space-y-6">
                   <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-xs space-y-4">
                     <h3 className="font-bold text-sm text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">
                       2. Add Dish to Menu
                     </h3>
                     <form onSubmit={handleAddMenuItem} className="space-y-3.5">
-                      
+
                       <div className="space-y-1">
                         <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Dish Name</label>
                         <input
@@ -795,7 +1013,7 @@ export default function RestaurantDashboard() {
 
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
-                          <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Price ($)</label>
+                          <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-sans">Price ({getCurrencySymbol()})</label>
                           <input
                             type="number"
                             step="0.01"
@@ -851,9 +1069,37 @@ export default function RestaurantDashboard() {
                           rows="2"
                           value={itemForm.description}
                           onChange={(e) => setItemForm({ ...itemForm, description: e.target.value })}
-                          className="block w-full rounded-xl border border-slate-200 dark:border-slate-850 bg-slate-50 dark:bg-zinc-950 px-3 py-2 text-xs focus:border-brand-500 focus:outline-none"
+                          className="block w-full rounded-xl border border-slate-200 dark:border-slate-855 bg-slate-50 dark:bg-zinc-950 px-3 py-2 text-xs focus:border-brand-500 focus:outline-none"
                           placeholder="Allergies warnings, taste details..."
                         />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Dish Picture (PNG only, max 1MB)</label>
+
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="file"
+                            accept="image/png, image/jpeg, image/jpg, image/webp"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                handleImageUpload(file, (base64) => {
+                                  setItemForm({ ...itemForm, image: base64 });
+                                });
+                              }
+                            }}
+                            className="block w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 dark:file:bg-zinc-800 dark:file:text-slate-350 cursor-pointer"
+                          />
+                          {itemForm.image && (
+                            <img
+                              src={itemForm.image}
+                              alt="Preview"
+                              className="w-8 h-8 rounded-lg object-cover border border-slate-200 dark:border-slate-800 flex-none"
+                            />
+                          )}
+                        </div>
+                        <p className="text-[8px] text-gray-500">Upload transparent image (PNG only)</p>
                       </div>
 
                       <button
@@ -868,7 +1114,7 @@ export default function RestaurantDashboard() {
                 </div>
 
                 {/* Right side items list */}
-                <div className="lg:col-span-8 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xs flex flex-col">
+                <div className="lg:col-span-6 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xs flex flex-col">
                   <div className="pb-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                     <h3 className="text-base font-bold text-slate-900 dark:text-white">Active Digital Menu Items</h3>
                     <span className="text-xs text-slate-400 font-semibold">{totalMenuItems} dishes online</span>
@@ -877,11 +1123,22 @@ export default function RestaurantDashboard() {
                   <div className="overflow-y-auto space-y-4 max-h-[500px] pr-2 pt-4 no-scrollbar">
                     {menuItems.map((item) => (
                       <div key={item._id} className="p-4 bg-slate-50 dark:bg-zinc-950 border border-slate-200/50 dark:border-slate-800 rounded-2xl flex items-center justify-between gap-4">
-                        <div className="text-left space-y-1">
+
+                        {/* Optional thumbnail preview */}
+                        {item.image && (
+                          <div className="w-12 h-12 rounded-xl overflow-hidden flex-none border border-slate-200/50 dark:border-slate-850">
+                            <img
+                              src={item.image}
+                              alt={item.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
+
+                        <div className="text-left space-y-1 flex-grow">
                           <div className="flex items-center gap-1.5">
-                            <span className={`inline-flex items-center justify-center w-4.5 h-4.5 border rounded-sm font-bold text-[9px] ${
-                              item.isVeg ? "border-emerald-500 text-emerald-500" : "border-red-500 text-red-500"
-                            }`}>
+                            <span className={`inline-flex items-center justify-center w-4.5 h-4.5 border rounded-sm font-bold text-[9px] ${item.isVeg ? "border-emerald-500 text-emerald-500" : "border-red-500 text-red-500"
+                              }`}>
                               {item.isVeg ? "V" : "N"}
                             </span>
                             <span className="font-extrabold text-sm text-slate-900 dark:text-white">{item.name}</span>
@@ -891,32 +1148,203 @@ export default function RestaurantDashboard() {
                           </div>
                           <p className="text-xs text-slate-400 max-w-lg leading-relaxed line-clamp-1">{item.description}</p>
                           <div className="flex gap-4 text-[10px] text-slate-400 font-semibold">
-                            <span>Price: <span className="text-slate-800 dark:text-white font-extrabold">${item.price.toFixed(2)}</span></span>
+                            <span>Price: <span className="text-slate-800 dark:text-white font-extrabold">{getCurrencySymbol()}{item.price.toFixed(2)}</span></span>
                             <span>Prep Time: <span className="text-slate-800 dark:text-white font-extrabold">{item.prepTime} min</span></span>
                           </div>
                         </div>
 
-                        {/* Availability Toggler */}
-                        <div className="flex items-center gap-3">
-                          <button
-                            onClick={() => toggleItemAvailability(item._id, item.isAvailable)}
-                            className={`relative inline-flex h-5.5 w-10 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                              item.isAvailable ? "bg-emerald-500" : "bg-slate-350 dark:bg-zinc-700"
-                            }`}
-                          >
-                            <span
-                              className={`pointer-events-none inline-block h-4.5 w-4.5 transform rounded-full bg-white shadow-xs transition duration-200 ease-in-out ${
-                                item.isAvailable ? "translate-x-4.5" : "translate-x-0"
-                              }`}
-                            />
-                          </button>
-                          <span className="text-[9px] font-bold uppercase text-slate-400">Available</span>
+                        {/* Actions & Availability */}
+                        <div className="flex items-center gap-4 flex-none">
+                          {/* Availability Toggler */}
+                          <div className="flex items-center gap-1.5 bg-white dark:bg-zinc-900 border border-slate-200/50 dark:border-slate-800 px-2 py-1 rounded-xl shadow-3xs">
+                            <button
+                              onClick={() => toggleItemAvailability(item._id, item.isAvailable)}
+                              className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${item.isAvailable ? "bg-emerald-500" : "bg-slate-300 dark:bg-zinc-700"
+                                }`}
+                            >
+                              <span
+                                className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-xs transition duration-200 ease-in-out ${item.isAvailable ? "translate-x-3" : "translate-x-0"
+                                  }`}
+                              />
+                            </button>
+                            <span className="text-[8px] font-bold uppercase text-slate-400">Available</span>
+                          </div>
+
+                          {/* Edit / Delete Buttons */}
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setEditingMenuItem(item)}
+                              className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 flex items-center justify-center text-xs font-bold text-slate-600 dark:text-slate-300 transition-all active:scale-95 cursor-pointer"
+                              title="Edit Item"
+                            >
+                              ✎
+                            </button>
+                            <button
+                              onClick={() => handleDeleteMenuItem(item._id)}
+                              className="w-8 h-8 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-955/20 dark:hover:bg-red-955/40 flex items-center justify-center text-xs font-bold text-red-500 transition-all active:scale-95 cursor-pointer"
+                              title="Delete Item"
+                            >
+                              ✕
+                            </button>
+                          </div>
                         </div>
 
                       </div>
                     ))}
                   </div>
                 </div>
+
+                {/* Edit Menu Item Modal Overlay */}
+                {editingMenuItem && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fade-in text-slate-800 dark:text-slate-200">
+                    <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-slate-850 p-6 rounded-3xl shadow-xl w-full max-w-lg animate-scale-in text-left flex flex-col max-h-[90vh]">
+
+                      <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 flex-none">
+                        <h3 className="font-extrabold text-sm text-slate-900 dark:text-white">📝 Edit Menu Dish</h3>
+                        <button
+                          onClick={() => setEditingMenuItem(null)}
+                          className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-sm font-black cursor-pointer"
+                        >
+                          ✕
+                        </button>
+                      </div>
+
+                      <form onSubmit={handleUpdateMenuItem} className="space-y-4 text-xs font-semibold text-slate-500 overflow-y-auto pr-1 no-scrollbar flex-grow">
+
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Dish Name</label>
+                          <input
+                            type="text"
+                            required
+                            value={editingMenuItem.name}
+                            onChange={(e) => setEditingMenuItem({ ...editingMenuItem, name: e.target.value })}
+                            className="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-zinc-900 focus:outline-none font-medium text-slate-800 dark:text-slate-200"
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 font-sans">Price ({getCurrencySymbol()})</label>
+                            <input
+                              type="number"
+                              required
+                              step="0.01"
+                              value={editingMenuItem.price}
+                              onChange={(e) => setEditingMenuItem({ ...editingMenuItem, price: e.target.value })}
+                              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-zinc-900 focus:outline-none font-medium text-slate-800 dark:text-slate-200"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Prep Speed (mins)</label>
+                            <input
+                              type="number"
+                              required
+                              value={editingMenuItem.prepTime}
+                              onChange={(e) => setEditingMenuItem({ ...editingMenuItem, prepTime: e.target.value })}
+                              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-zinc-900 focus:outline-none font-medium text-slate-800 dark:text-slate-200"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Category</label>
+                            <select
+                              value={editingMenuItem.category}
+                              onChange={(e) => setEditingMenuItem({ ...editingMenuItem, category: e.target.value })}
+                              className="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-zinc-900 focus:outline-none font-medium text-slate-850 dark:text-slate-200"
+                            >
+                              {categories.map((cat, idx) => (
+                                <option key={idx} value={cat.name}>{cat.name}</option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Veg / Non-Veg</label>
+                            <div className="grid grid-cols-2 gap-2 pt-0.5">
+                              <button
+                                type="button"
+                                onClick={() => setEditingMenuItem({ ...editingMenuItem, isVeg: true })}
+                                className={`py-1.5 rounded-lg border text-center font-bold cursor-pointer transition-all ${editingMenuItem.isVeg
+                                  ? "bg-emerald-500 border-emerald-500 text-white"
+                                  : "border-slate-250 dark:border-slate-800 hover:bg-slate-50"
+                                  }`}
+                              >
+                                Veg
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditingMenuItem({ ...editingMenuItem, isVeg: false })}
+                                className={`py-1.5 rounded-lg border text-center font-bold cursor-pointer transition-all ${!editingMenuItem.isVeg
+                                  ? "bg-red-500 border-red-500 text-white"
+                                  : "border-slate-250 dark:border-slate-800 hover:bg-slate-50"
+                                  }`}
+                              >
+                                Non-Veg
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Dish Picture (PNG only, max 1MB)</label>
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="file"
+                              accept="image/png, image/jpeg, image/jpg, image/webp"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  handleImageUpload(file, (base64) => {
+                                    setEditingMenuItem({ ...editingMenuItem, image: base64 });
+                                  });
+                                }
+                              }}
+                              className="block w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 dark:file:bg-zinc-800 dark:file:text-slate-350 cursor-pointer"
+                            />
+                            {editingMenuItem.image && (
+                              <div className="flex items-center gap-1.5 flex-none">
+                                <img
+                                  src={editingMenuItem.image}
+                                  alt="Preview"
+                                  className="w-8 h-8 rounded-lg object-cover border border-slate-200 dark:border-slate-800"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingMenuItem({ ...editingMenuItem, image: "" })}
+                                  className="text-red-500 font-bold hover:text-red-600 text-[10px] cursor-pointer"
+                                  title="Remove image"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Dish Description</label>
+                          <textarea
+                            rows="2"
+                            value={editingMenuItem.description}
+                            onChange={(e) => setEditingMenuItem({ ...editingMenuItem, description: e.target.value })}
+                            className="w-full px-3 py-2 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-zinc-900 focus:outline-none font-medium text-slate-800 dark:text-slate-200"
+                          />
+                        </div>
+
+                        <button
+                          type="submit"
+                          className={`w-full py-2.5 rounded-xl text-xs font-bold text-white shadow-md active:scale-98 transition-all cursor-pointer ${themeButton[profile.themeColor]}`}
+                        >
+                          Save Changes
+                        </button>
+
+                      </form>
+                    </div>
+                  </div>
+                )}
 
               </div>
             )}
@@ -996,10 +1424,10 @@ export default function RestaurantDashboard() {
             {/* TAB 4: PROFILE & BRANDING SETTINGS */}
             {activeTab === "settings" && (
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 text-left animate-fade-in">
-                
+
                 {/* Left form inputs - profile and passwords */}
                 <div className="lg:col-span-8 space-y-8">
-                  
+
                   {/* Profile card form */}
                   <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-8 rounded-3xl shadow-xs space-y-6">
                     <div className="space-y-1 pb-4 border-b border-slate-100 dark:border-slate-800">
@@ -1033,13 +1461,12 @@ export default function RestaurantDashboard() {
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1">
-                          <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Contact Email</label>
+                          <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Contact Email (Read-only)</label>
                           <input
                             type="email"
-                            required
+                            disabled
                             value={profile.email}
-                            onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-                            className="block w-full rounded-xl border border-slate-200 dark:border-slate-850 bg-slate-50 dark:bg-zinc-950 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none"
+                            className="block w-full rounded-xl border border-slate-200 dark:border-slate-855 bg-slate-100 dark:bg-zinc-950/40 px-3.5 py-2.5 text-sm text-slate-400 focus:outline-none cursor-not-allowed font-semibold"
                           />
                         </div>
                         <div className="space-y-1">
@@ -1049,8 +1476,39 @@ export default function RestaurantDashboard() {
                             required
                             value={profile.phone}
                             onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-                            className="block w-full rounded-xl border border-slate-200 dark:border-slate-850 bg-slate-50 dark:bg-zinc-950 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none"
+                            className="block w-full rounded-xl border border-slate-200 dark:border-slate-850 bg-slate-50 dark:bg-zinc-950 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none font-semibold"
                           />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <label className="text-xs font-bold uppercase tracking-wider text-slate-500 font-sans">Restaurant Subdomain (Read-only)</label>
+                          <div className="flex rounded-xl shadow-3xs">
+                            <input
+                              type="text"
+                              disabled
+                              value={getSubdomain()}
+                              className="flex-grow min-w-0 block w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-855 bg-slate-100 dark:bg-zinc-955/40 rounded-l-xl text-sm text-slate-400 focus:outline-none cursor-not-allowed font-semibold"
+                            />
+                            <span className="inline-flex items-center px-3.5 rounded-r-xl border border-l-0 border-slate-200 dark:border-slate-805 bg-slate-100 dark:bg-zinc-800 text-slate-400 text-xs font-bold select-none">
+                              .quickbite.menu
+                            </span>
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-xs font-bold uppercase tracking-wider text-slate-500 font-sans">Menu Currency</label>
+                          <select
+                            value={profile.currency}
+                            onChange={(e) => setProfile({ ...profile, currency: e.target.value })}
+                            className="block w-full rounded-xl border border-slate-200 dark:border-slate-850 bg-slate-50 dark:bg-zinc-950 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none font-semibold text-slate-700 dark:text-slate-300"
+                          >
+                            <option value="INR">INR (₹) - Indian Rupee</option>
+                            <option value="USD">USD ($) - US Dollar</option>
+                            <option value="EUR">EUR (€) - Euro</option>
+                            <option value="GBP">GBP (£) - British Pound</option>
+                            <option value="AED">AED (د.إ) - UAE Dirham</option>
+                          </select>
                         </div>
                       </div>
 
@@ -1061,7 +1519,7 @@ export default function RestaurantDashboard() {
                           required
                           value={profile.address}
                           onChange={(e) => setProfile({ ...profile, address: e.target.value })}
-                          className="block w-full rounded-xl border border-slate-200 dark:border-slate-850 bg-slate-50 dark:bg-zinc-950 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none"
+                          className="block w-full rounded-xl border border-slate-200 dark:border-slate-850 bg-slate-50 dark:bg-zinc-950 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none font-semibold"
                         />
                       </div>
 
@@ -1085,11 +1543,10 @@ export default function RestaurantDashboard() {
 
                     <form onSubmit={handlePasswordSubmit} className="space-y-4">
                       {passwordStatus && (
-                        <div className={`p-3.5 rounded-xl text-xs font-semibold ${
-                          passwordStatus.startsWith("success")
-                            ? "bg-emerald-50 border border-emerald-250 text-emerald-800 dark:bg-emerald-950/20 dark:text-emerald-400"
-                            : "bg-red-50 border border-red-250 text-red-800 dark:bg-red-950/20 dark:text-red-400"
-                        }`}>
+                        <div className={`p-3.5 rounded-xl text-xs font-semibold ${passwordStatus.startsWith("success")
+                          ? "bg-emerald-50 border border-emerald-250 text-emerald-800 dark:bg-emerald-950/20 dark:text-emerald-400"
+                          : "bg-red-50 border border-red-250 text-red-800 dark:bg-red-950/20 dark:text-red-400"
+                          }`}>
                           {passwordStatus.split(": ")[1]}
                         </div>
                       )}
@@ -1146,31 +1603,51 @@ export default function RestaurantDashboard() {
 
                 {/* Right side panel - Branding Theme and Logo */}
                 <div className="lg:col-span-4 space-y-8">
-                  
+
                   <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl shadow-xs space-y-6">
                     <div className="space-y-1 pb-4 border-b border-slate-100 dark:border-slate-800">
                       <h3 className="text-lg font-bold text-slate-900 dark:text-white font-sans">Branding Styles</h3>
                       <p className="text-xs text-slate-400">Tweak theme colors and logos representing your restaurant.</p>
                     </div>
 
-                    {/* Logo Selector */}
-                    <div className="space-y-2">
-                      <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block">Select Logo Symbol</span>
-                      <div className="grid grid-cols-4 gap-2">
-                        {["☕", "🍔", "🍕", "🥩", "🍣", "🌮", "🍰", "🍹"].map((emoji) => (
-                          <button
-                            key={emoji}
-                            type="button"
-                            onClick={() => setProfile({ ...profile, logoEmoji: emoji })}
-                            className={`w-11 h-11 flex items-center justify-center rounded-xl border text-xl cursor-pointer transition-all ${
-                              profile.logoEmoji === emoji
-                                ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white scale-105"
-                                : "border-slate-200 dark:border-slate-800 hover:bg-slate-50"
-                            }`}
-                          >
-                            {emoji}
-                          </button>
-                        ))}
+                    {/* Logo Upload */}
+                    <div className="space-y-2 text-slate-500">
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block">Restaurant Logo (PNG/JPG/JPEG/WEBP max 1MB)</span>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="file"
+                          accept="image/png, image/jpeg, image/jpg, image/webp"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              handleImageUpload(file, (base64) => {
+                                setProfile({ ...profile, logo: base64 });
+                              });
+                            }
+                          }}
+                          className="block w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 dark:file:bg-zinc-800 dark:file:text-slate-350 cursor-pointer"
+                        />
+                        {profile.logo ? (
+                          <div className="flex items-center gap-1.5 flex-none">
+                            <img
+                              src={profile.logo}
+                              alt="Logo"
+                              className="w-12 h-12 rounded-xl object-cover border border-slate-200 dark:border-slate-800"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setProfile({ ...profile, logo: "" })}
+                              className="text-red-500 font-bold hover:text-red-600 text-[10px] cursor-pointer"
+                              title="Remove logo"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-zinc-800 flex items-center justify-center text-xs font-bold flex-none text-slate-400">
+                            No Logo
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -1189,11 +1666,10 @@ export default function RestaurantDashboard() {
                             key={theme.id}
                             type="button"
                             onClick={() => setProfile({ ...profile, themeColor: theme.id })}
-                            className={`w-full inline-flex items-center gap-2 p-2.5 border rounded-xl text-xs font-bold cursor-pointer transition-all ${
-                              profile.themeColor === theme.id
-                                ? "bg-slate-50 dark:bg-zinc-800 border-slate-900 dark:border-slate-200"
-                                : "border-slate-200 dark:border-slate-800 hover:bg-slate-50"
-                            }`}
+                            className={`w-full inline-flex items-center gap-2 p-2.5 border rounded-xl text-xs font-bold cursor-pointer transition-all ${profile.themeColor === theme.id
+                              ? "bg-slate-50 dark:bg-zinc-800 border-slate-900 dark:border-slate-200"
+                              : "border-slate-200 dark:border-slate-800 hover:bg-slate-50"
+                              }`}
                           >
                             <span className={`w-3.5 h-3.5 rounded-full ${theme.color}`}></span>
                             <span>{theme.label}</span>
@@ -1243,7 +1719,7 @@ export default function RestaurantDashboard() {
                   <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl shadow-xs">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Cumulative Revenue</span>
                     <p className="text-3xl font-black text-brand-500 mt-2">
-                      ${orders.reduce((acc, curr) => acc + curr.total, 0).toFixed(2)}
+                      {getCurrencySymbol()}{orders.reduce((acc, curr) => acc + curr.total, 0).toFixed(2)}
                     </p>
                     <p className="text-[10px] text-slate-400 mt-2">Sum of order totals registered across all active table sessions.</p>
                   </div>
@@ -1255,7 +1731,7 @@ export default function RestaurantDashboard() {
                     <h3 className="font-extrabold text-sm text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3">
                       🔥 Most Ordered Menu Items
                     </h3>
-                    
+
                     {getItemRankings().length > 0 ? (
                       <div className="space-y-4">
                         {getItemRankings().map((item, idx) => {
@@ -1303,7 +1779,7 @@ export default function RestaurantDashboard() {
                               <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-zinc-800/10">
                                 <td className="py-2.5 font-bold text-slate-900 dark:text-white">{stat.tableId}</td>
                                 <td className="py-2.5 font-semibold text-slate-500">{stat.count} orders</td>
-                                <td className="py-2.5 font-black text-slate-900 dark:text-white text-right">${stat.revenue.toFixed(2)}</td>
+                                <td className="py-2.5 font-black text-slate-900 dark:text-white text-right">{getCurrencySymbol()}{stat.revenue.toFixed(2)}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -1382,28 +1858,36 @@ export default function RestaurantDashboard() {
                       </div>
                       <div className="space-y-1">
                         <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Staff Role</label>
-                        <div className="grid grid-cols-2 gap-2 pt-1">
+                        <div className="grid grid-cols-3 gap-2 pt-1">
                           <button
                             type="button"
                             onClick={() => setStaffForm({ ...staffForm, role: "waiter" })}
-                            className={`py-2 px-3 border rounded-xl text-center font-bold cursor-pointer transition-all ${
-                              staffForm.role === "waiter"
-                                ? "bg-blue-500 text-white border-blue-500"
-                                : "border-slate-200 dark:border-slate-800 hover:bg-slate-50"
-                            }`}
+                            className={`py-2 px-1 border rounded-xl text-center text-xs font-bold cursor-pointer transition-all ${staffForm.role === "waiter"
+                              ? "bg-blue-500 text-white border-blue-500"
+                              : "border-slate-200 dark:border-slate-800 hover:bg-slate-50"
+                              }`}
                           >
                             Waiter
                           </button>
                           <button
                             type="button"
                             onClick={() => setStaffForm({ ...staffForm, role: "kitchen" })}
-                            className={`py-2 px-3 border rounded-xl text-center font-bold cursor-pointer transition-all ${
-                              staffForm.role === "kitchen"
-                                ? "bg-emerald-500 text-white border-emerald-500"
-                                : "border-slate-200 dark:border-slate-800 hover:bg-slate-50"
-                            }`}
+                            className={`py-2 px-1 border rounded-xl text-center text-xs font-bold cursor-pointer transition-all ${staffForm.role === "kitchen"
+                              ? "bg-emerald-500 text-white border-emerald-500"
+                              : "border-slate-200 dark:border-slate-800 hover:bg-slate-50"
+                              }`}
                           >
-                            Chef / Kitchen
+                            Chef/Kitchen
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setStaffForm({ ...staffForm, role: "billing" })}
+                            className={`py-2 px-1 border rounded-xl text-center text-xs font-bold cursor-pointer transition-all ${staffForm.role === "billing"
+                              ? "bg-violet-600 text-white border-violet-600"
+                              : "border-slate-200 dark:border-slate-800 hover:bg-slate-50"
+                              }`}
+                          >
+                            Billing Staff
                           </button>
                         </div>
                       </div>
@@ -1439,12 +1923,13 @@ export default function RestaurantDashboard() {
                                   <h4 className="font-extrabold text-sm text-slate-900 dark:text-white leading-tight">{member.name || "Unnamed"}</h4>
                                   <span className="text-[10px] text-slate-400 font-semibold">{member.email}</span>
                                 </div>
-                                <span className={`text-[9px] font-extrabold tracking-wider uppercase px-2 py-0.5 rounded-md ${
-                                  member.role === "waiter"
-                                    ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
-                                    : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                                }`}>
-                                  {member.role === "waiter" ? "Waitstaff" : "Culinary Chef"}
+                                <span className={`text-[9px] font-extrabold tracking-wider uppercase px-2 py-0.5 rounded-md ${member.role === "waiter"
+                                  ? "bg-blue-500/10 text-blue-600 dark:text-blue-400"
+                                  : member.role === "kitchen"
+                                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                                    : "bg-violet-500/10 text-violet-600 dark:text-violet-400"
+                                  }`}>
+                                  {member.role === "waiter" ? "Waitstaff" : member.role === "kitchen" ? "Culinary Chef" : "Billing Desk"}
                                 </span>
                               </div>
                               <div className="text-[10px] text-slate-400 space-y-0.5 pt-1">
@@ -1510,8 +1995,8 @@ export default function RestaurantDashboard() {
                               value={editingStaff.emailUsername !== undefined ? editingStaff.emailUsername : (editingStaff.email ? editingStaff.email.split("@")[0] : "")}
                               onChange={(e) => {
                                 const uname = e.target.value.toLowerCase().replace(/\s/g, "");
-                                setEditingStaff({ 
-                                  ...editingStaff, 
+                                setEditingStaff({
+                                  ...editingStaff,
                                   emailUsername: uname,
                                   email: `${uname}@${getStaffDomain()}`
                                 });
@@ -1544,28 +2029,36 @@ export default function RestaurantDashboard() {
                         </div>
                         <div className="space-y-1">
                           <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Staff Role</label>
-                          <div className="grid grid-cols-2 gap-2 pt-1">
+                          <div className="grid grid-cols-3 gap-2 pt-1">
                             <button
                               type="button"
                               onClick={() => setEditingStaff({ ...editingStaff, role: "waiter" })}
-                              className={`py-2 px-3 border rounded-xl text-center font-bold cursor-pointer transition-all ${
-                                editingStaff.role === "waiter"
-                                  ? "bg-blue-500 text-white border-blue-500"
-                                  : "border-slate-200 dark:border-slate-800 hover:bg-slate-50"
-                              }`}
+                              className={`py-2 px-1 border rounded-xl text-center text-xs font-bold cursor-pointer transition-all ${editingStaff.role === "waiter"
+                                ? "bg-blue-500 text-white border-blue-500"
+                                : "border-slate-200 dark:border-slate-800 hover:bg-slate-50"
+                                }`}
                             >
                               Waiter
                             </button>
                             <button
                               type="button"
                               onClick={() => setEditingStaff({ ...editingStaff, role: "kitchen" })}
-                              className={`py-2 px-3 border rounded-xl text-center font-bold cursor-pointer transition-all ${
-                                editingStaff.role === "kitchen"
-                                  ? "bg-emerald-500 text-white border-emerald-500"
-                                  : "border-slate-200 dark:border-slate-800 hover:bg-slate-50"
-                              }`}
+                              className={`py-2 px-1 border rounded-xl text-center text-xs font-bold cursor-pointer transition-all ${editingStaff.role === "kitchen"
+                                ? "bg-emerald-500 text-white border-emerald-500"
+                                : "border-slate-200 dark:border-slate-800 hover:bg-slate-50"
+                                }`}
                             >
-                              Chef / Kitchen
+                              Chef/Kitchen
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingStaff({ ...editingStaff, role: "billing" })}
+                              className={`py-2 px-1 border rounded-xl text-center text-xs font-bold cursor-pointer transition-all ${editingStaff.role === "billing"
+                                ? "bg-violet-600 text-white border-violet-600"
+                                : "border-slate-200 dark:border-slate-800 hover:bg-slate-50"
+                                }`}
+                            >
+                              Billing Staff
                             </button>
                           </div>
                         </div>

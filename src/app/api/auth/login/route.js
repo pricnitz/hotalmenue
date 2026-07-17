@@ -20,6 +20,7 @@ export async function POST(request) {
         if (user.role === "owner") redirectPath = "/dashboard/restaurant";
         if (user.role === "waiter") redirectPath = "/dashboard/waiter";
         if (user.role === "kitchen") redirectPath = "/dashboard/kitchen";
+        if (user.role === "billing") redirectPath = "/dashboard/waiter";
 
         return NextResponse.json(
           { role: user.role, redirect: redirectPath, userId: user._id, restaurantId: user.restaurantId || "" },
