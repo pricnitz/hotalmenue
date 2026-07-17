@@ -11,7 +11,13 @@ const QRCodeImage = ({ value }) => {
 
   useEffect(() => {
     if (!value) return;
-    QRCode.toDataURL(value, { margin: 1, width: 256 })
+    let absoluteUrl = value;
+    if (value.startsWith("/")) {
+      if (typeof window !== "undefined") {
+        absoluteUrl = window.location.origin + value;
+      }
+    }
+    QRCode.toDataURL(absoluteUrl, { margin: 1, width: 256 })
       .then((url) => setSrc(url))
       .catch((err) => console.error("QR Code generation error:", err));
   }, [value]);
