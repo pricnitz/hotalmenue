@@ -79,7 +79,7 @@ export default function RegisterPage() {
             loginUrl: "/auth/login",
           });
         } else {
-          alert("Failed to save to database. Please review form details.");
+          console.error("Failed to save to database. Please review form details.");
         }
       } catch (err) {
         console.error("Database POST Error during onboarding:", err);

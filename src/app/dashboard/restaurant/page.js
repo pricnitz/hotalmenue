@@ -75,7 +75,7 @@ export default function RestaurantDashboard() {
   const [itemForm, setItemForm] = useState({
     name: "",
     price: "",
-    category: "Mains",
+    category: "",
     isVeg: true,
     isAvailable: true,
     prepTime: 12,
@@ -177,8 +177,11 @@ export default function RestaurantDashboard() {
         setCategories(catData);
         setOrders(orderData);
 
-        if (catData.length > 0 && !itemForm.category) {
-          setItemForm(prev => ({ ...prev, category: catData[0].name }));
+        if (catData.length > 0) {
+          setItemForm(prev => {
+            const isValid = catData.some(c => c.name.trim().toLowerCase() === (prev.category || "").trim().toLowerCase());
+            return { ...prev, category: isValid ? prev.category : catData[0].name };
+          });
         }
       }
     } catch (e) {
@@ -1280,8 +1283,14 @@ export default function RestaurantDashboard() {
 
                   <div className="overflow-y-auto space-y-4 max-h-[500px] pr-2 pt-4 no-scrollbar">
                     {menuItems.filter((item) => {
-                      if (selectedDashboardCategory === "All") return true;
-                      return item.category && item.category.trim().toLowerCase() === selectedDashboardCategory.trim().toLowerCase();
+                      if (!selectedDashboardCategory || selectedDashboardCategory === "All") return true;
+                      if (!item.category) return false;
+                      const cleanItem = item.category.trim().toLowerCase();
+                      const cleanTarget = selectedDashboardCategory.trim().toLowerCase();
+                      if (cleanItem === cleanTarget) return true;
+                      const singItem = cleanItem.endsWith("s") ? cleanItem.slice(0, -1) : cleanItem;
+                      const singTarget = cleanTarget.endsWith("s") ? cleanTarget.slice(0, -1) : cleanTarget;
+                      return singItem === singTarget || cleanItem.includes(singTarget) || cleanTarget.includes(singItem);
                     }).map((item) => (
                       <div key={item._id} className="p-4 bg-slate-50 dark:bg-zinc-950 border border-slate-200/50 dark:border-slate-800 rounded-2xl flex items-center justify-between gap-4">
 
@@ -1522,8 +1531,8 @@ export default function RestaurantDashboard() {
                     </div>
                   </div>
 
-                  <form onSubmit={handleTableGenerateSubmit} className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-end">
-                    <div className="sm:col-span-4 space-y-1.5">
+                  <form onSubmit={handleTableGenerateSubmit} className="flex flex-col sm:flex-row items-end gap-4 max-w-lg">
+                    <div className="flex-grow space-y-1.5">
                       <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Number of Dining Tables</label>
                       <input
                         type="number"
@@ -1536,29 +1545,12 @@ export default function RestaurantDashboard() {
                       />
                     </div>
 
-                    <div className="sm:col-span-5 space-y-1.5">
-                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Live Website Base Domain URL</label>
-                      <input
-                        type="text"
-                        required
-                        value={customBaseUrl}
-                        onChange={(e) => {
-                          setCustomBaseUrl(e.target.value);
-                          generateTablesList(parseInt(tableCount) || 20, e.target.value);
-                        }}
-                        placeholder="https://your-domain.com"
-                        className="block w-full rounded-xl border border-slate-200 dark:border-slate-850 bg-slate-50 dark:bg-zinc-950 px-4 py-2.5 text-xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 font-mono text-slate-800 dark:text-slate-200"
-                      />
-                    </div>
-
-                    <div className="sm:col-span-3">
-                      <button
-                        type="submit"
-                        className={`w-full rounded-xl px-4 py-2.5 text-xs font-bold text-white shadow-md active:scale-95 transition-all cursor-pointer ${themeButton[profile.themeColor]}`}
-                      >
-                        Re-generate QRs ⚡
-                      </button>
-                    </div>
+                    <button
+                      type="submit"
+                      className={`rounded-xl px-5 py-2.5 text-xs font-bold text-white shadow-md active:scale-95 transition-all cursor-pointer flex-none ${themeButton[profile.themeColor]}`}
+                    >
+                      Generate Unique QR codes ⚡
+                    </button>
                   </form>
                 </div>
 

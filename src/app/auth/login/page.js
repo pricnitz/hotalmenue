@@ -65,12 +65,10 @@ export default function LoginPage() {
           redirectToDashboard(data.redirect);
         } else {
           setErrorMsg(data.error || "Invalid credentials.");
-          alert("Auto-login failed: " + (data.error || "Invalid credentials."));
         }
       } catch (err) {
         console.error("Auto-login error:", err);
         setErrorMsg("Failed to connect to authentication server: " + err.message);
-        alert("Auto-login error exception: " + err.message);
       } finally {
         setLoading(false);
       }
@@ -83,7 +81,6 @@ export default function LoginPage() {
     e.preventDefault();
     setErrorMsg("");
     setLoading(true);
-    alert("Sign In clicked. Submitting: " + email);
 
     try {
       console.log("Submitting login form for:", email);
@@ -98,7 +95,6 @@ export default function LoginPage() {
       console.log("Submit response data:", data);
 
       if (res.ok) {
-        alert("Success! Redirecting to: " + data.redirect);
         setSuccess(true);
         if (data.restaurantId) {
           try {
@@ -110,12 +106,10 @@ export default function LoginPage() {
         redirectToDashboard(data.redirect);
       } else {
         setErrorMsg(data.error || "Invalid credentials.");
-        alert("Login failed response: " + (data.error || "Invalid credentials."));
       }
     } catch (err) {
       console.error("Login error exception:", err);
       setErrorMsg("Failed to connect to authentication server: " + err.message);
-      alert("Login Error Exception: " + err.message);
     } finally {
       setLoading(false);
     }

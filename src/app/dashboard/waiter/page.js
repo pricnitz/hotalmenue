@@ -679,7 +679,9 @@ export default function WaiterDashboard() {
                         type="button"
                         onClick={() => setActiveCategory(cat.name)}
                         className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
-                          activeCategory.trim().toLowerCase() === cat.name.trim().toLowerCase()
+                          activeCategory.trim().toLowerCase() === cat.name.trim().toLowerCase() ||
+                          (activeCategory.trim().toLowerCase().endsWith("s") && activeCategory.trim().toLowerCase().slice(0, -1) === cat.name.trim().toLowerCase()) ||
+                          (cat.name.trim().toLowerCase().endsWith("s") && cat.name.trim().toLowerCase().slice(0, -1) === activeCategory.trim().toLowerCase())
                             ? "bg-brand-500 text-white shadow-sm"
                             : "text-slate-500 hover:bg-slate-100 dark:hover:bg-zinc-900 hover:text-slate-800"
                         }`}
@@ -699,18 +701,22 @@ export default function WaiterDashboard() {
                     {menuItems.filter(item => {
                       const itemCat = item.category ? item.category.trim().toLowerCase() : "";
                       const activeCat = activeCategory ? activeCategory.trim().toLowerCase() : "";
-                      const matchesSearch = item.name.toLowerCase().includes(menuSearch.toLowerCase()) || 
+                      const singItem = itemCat.endsWith("s") ? itemCat.slice(0, -1) : itemCat;
+                      const singTarget = activeCat.endsWith("s") ? activeCat.slice(0, -1) : activeCat;
+                      const matchesSearch = !menuSearch || item.name.toLowerCase().includes(menuSearch.toLowerCase()) || 
                                             itemCat.includes(menuSearch.toLowerCase());
-                      const matchesCategory = activeCat === "all" || itemCat === activeCat;
+                      const matchesCategory = activeCat === "all" || itemCat === activeCat || singItem === singTarget || itemCat.includes(singTarget) || activeCat.includes(singItem);
                       return matchesSearch && matchesCategory;
                     }).length > 0 ? (
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                         {menuItems.filter(item => {
                           const itemCat = item.category ? item.category.trim().toLowerCase() : "";
                           const activeCat = activeCategory ? activeCategory.trim().toLowerCase() : "";
-                          const matchesSearch = item.name.toLowerCase().includes(menuSearch.toLowerCase()) || 
+                          const singItem = itemCat.endsWith("s") ? itemCat.slice(0, -1) : itemCat;
+                          const singTarget = activeCat.endsWith("s") ? activeCat.slice(0, -1) : activeCat;
+                          const matchesSearch = !menuSearch || item.name.toLowerCase().includes(menuSearch.toLowerCase()) || 
                                                 itemCat.includes(menuSearch.toLowerCase());
-                          const matchesCategory = activeCat === "all" || itemCat === activeCat;
+                          const matchesCategory = activeCat === "all" || itemCat === activeCat || singItem === singTarget || itemCat.includes(singTarget) || activeCat.includes(singItem);
                           return matchesSearch && matchesCategory;
                         }).map((item) => {
                           const qtyInCart = newOrderCart.find(i => i._id === item._id)?.qty || 0;

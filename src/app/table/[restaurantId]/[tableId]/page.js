@@ -154,23 +154,34 @@ export default function TableMenuPage() {
     }
   };
 
+  const isCategoryMatch = (itemCat, targetCat) => {
+    if (!targetCat) return true;
+    const cleanTarget = targetCat.trim().toLowerCase();
+    if (cleanTarget === "all" || cleanTarget === "all dishes") return true;
+    if (!itemCat) return false;
+
+    const cleanItem = itemCat.trim().toLowerCase();
+    if (cleanItem === cleanTarget) return true;
+
+    const singularItem = cleanItem.endsWith("s") ? cleanItem.slice(0, -1) : cleanItem;
+    const singularTarget = cleanTarget.endsWith("s") ? cleanTarget.slice(0, -1) : cleanTarget;
+
+    return singularItem === singularTarget || cleanItem.includes(singularTarget) || cleanTarget.includes(singularItem);
+  };
+
   // Filter items
   const filteredItems = menuItems.filter((item) => {
-    const itemCat = item.category ? item.category.trim().toLowerCase() : "";
-    const activeCat = activeCategory ? activeCategory.trim().toLowerCase() : "";
-
-    const matchesCategory =
-      activeCat === "all" ||
-      activeCat === "all dishes" ||
-      itemCat === activeCat;
-    
+    const matchesCategory = isCategoryMatch(item.category, activeCategory);
     const matchesVeg = !vegOnly || item.isVeg === true;
 
     const matchesSearch =
+      !searchQuery ||
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    return matchesCategory && matchesVeg && matchesSearch && item.isAvailable;
+    const isAvailable = item.isAvailable !== false;
+
+    return matchesCategory && matchesVeg && matchesSearch && isAvailable;
   });
 
   const cartTotal = cart.reduce((acc, curr) => acc + curr.price * curr.qty, 0);
@@ -296,10 +307,7 @@ export default function TableMenuPage() {
             {/* Categories Pills */}
             <div className="flex gap-2 overflow-x-auto py-1.5 no-scrollbar scroll-smooth">
               {categories.map((cat, idx) => {
-                const isSelected =
-                  activeCategory.trim().toLowerCase() === cat.name.trim().toLowerCase() ||
-                  ((cat.name === "All Dishes" || cat.name === "all") &&
-                    (activeCategory.toLowerCase() === "all" || activeCategory.toLowerCase() === "all dishes"));
+                const isSelected = isCategoryMatch(cat.name, activeCategory);
 
                 return (
                   <button
