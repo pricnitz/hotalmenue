@@ -57,7 +57,7 @@ export default function RegisterPage() {
           password: form.password,
           userId: generatedUserId,
           phone: form.phone,
-          address: `Subdomain: ${form.subdomain}.quickbite.menu / Cuisine: ${form.cuisine}`,
+          address: `Subdomain: ${form.subdomain}.tablemenu.in / Cuisine: ${form.cuisine}`,
           gstNumber: "GST-PENDING",
           planType: "Growth",
           status: "Active",
@@ -126,7 +126,7 @@ export default function RegisterPage() {
               <div className="space-y-2">
                 <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white">Registration Successful!</h3>
                 <p className="text-sm text-slate-500">
-                  Welcome to the QuickBite ecosystem, <span className="font-semibold text-slate-800 dark:text-slate-200">{form.fullName}</span>.
+                  Welcome to the TableMenu.in ecosystem, <span className="font-semibold text-slate-800 dark:text-slate-200">{form.fullName}</span>.
                 </p>
               </div>
 
@@ -155,7 +155,7 @@ export default function RegisterPage() {
                   <div className="space-y-1">
                     <span className="text-slate-400 block font-medium">Login URL:</span>
                     <p className="font-mono text-brand-500 bg-white dark:bg-zinc-900 px-3 py-2 rounded-xl border border-slate-200/50 dark:border-slate-800 text-xs break-all">
-                      https://quickbite.menu/auth/login
+                      https://tablemenu.in/auth/login
                     </p>
                   </div>
                 </div>
@@ -332,7 +332,7 @@ export default function RegisterPage() {
                       placeholder="aroma"
                     />
                     <span className="inline-flex items-center px-3 rounded-r-xl border border-l-0 border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-zinc-800 text-slate-500 text-xs font-semibold select-none">
-                      .quickbite.menu
+                      .tablemenu.in
                     </span>
                   </div>
                 </div>

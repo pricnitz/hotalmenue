@@ -32,7 +32,7 @@ export default function Footer() {
                 <QrCodeIcon className="h-5 w-5" />
               </div>
               <span className="text-lg font-bold text-white">
-                QuickBite<span className="text-brand-500 font-extrabold">.</span>
+                tablemenu<span className="text-brand-500 font-extrabold">.in</span>
               </span>
             </Link>
             <p className="text-sm text-slate-400 max-w-xs">
@@ -105,7 +105,7 @@ export default function Footer() {
               </form>
               {subscribed && (
                 <p className="mt-2 text-xs text-emerald-400 font-medium animate-pulse">
-                  Subscribed successfully! Welcome to QuickBite.
+                  Subscribed successfully! Welcome to TableMenu.in.
                 </p>
               )}
             </div>
@@ -114,7 +114,7 @@ export default function Footer() {
 
         <div className="mt-12 border-t border-slate-800 pt-8 flex flex-col md:flex-row md:items-center md:justify-between">
           <p className="text-xs text-slate-500">
-            &copy; {currentYear} QuickBite Inc. Inspired by Toast POS, PetPooja, and DotPe. All rights reserved.
+            &copy; {currentYear} TableMenu.in Inc. All rights reserved.
           </p>
           <p className="mt-4 text-xs text-slate-600 md:mt-0">
             Built for modern gastronomy. Digitized contactless dining.

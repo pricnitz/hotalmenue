@@ -1,41 +1,87 @@
-import React from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
-import { BookOpenIcon, ClockIcon, ArrowRightIcon } from "../../components/Icons";
+import { BookOpenIcon, ClockIcon, ArrowRightIcon, XIcon } from "../../components/Icons";
 
-export const metadata = {
-  title: "Blog & Restaurant Growth Guides | QuickBite",
-  description: "Learn how to optimize table turns, increase tickets by 22% using smart upsells, and configure digital kitchen display workflows.",
-};
+const fallbackPosts = [
+  {
+    _id: "1",
+    title: "How QR Menus Increase Average Table Value by 22%",
+    summary: "A comprehensive data study of digital ordering habits. Learn how dynamic pairings and high-res photography trigger upselling without waiter intervention.",
+    content: `Digital menus have revolutionized how diners browse food. By presenting high-resolution imagery and automatic pairing suggestions (like suggesting fries with a burger), restaurants experience a proven 22% increase in average ticket size.
+
+Key Takeaways:
+1. High-res imagery increases dessert orders by 35%.
+2. Real-time out-of-stock toggles prevent customer disappointment.
+3. Multi-language translation captures international tourists effortlessly.`,
+    category: "Operations",
+    readTime: "5 min read",
+    date: "Jul 8, 2026",
+    author: "Sylvia Chen",
+    coverImage: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80"
+  },
+  {
+    _id: "2",
+    title: "Dedicated Technical Support & Standee Branding for Modern Restaurants",
+    summary: "Why having 1-on-1 technical and non-technical support transforms digital menu adoption for your restaurant staff and patrons.",
+    content: `Onboarding a new restaurant technology shouldn't feel overwhelming. With TableMenu.in, every outlet receives 1 Month of Free Dedicated Support covering setup, staff training, and physical QR standee design.
+
+Benefits of Dedicated Support:
+- Zero technical friction for kitchen staff.
+- Custom acrylic table tent cards delivered ready to print.
+- 24/7 hotline for emergency menu updates.`,
+    category: "Guides",
+    readTime: "4 min read",
+    date: "Jul 15, 2026",
+    author: "TableMenu Team",
+    coverImage: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&q=80"
+  },
+  {
+    _id: "3",
+    title: "How to Set Up a Kitchen Display System (KDS) Terminal",
+    summary: "Why thermal paper receipt printing is costing you money. Learn how color-coded timers on mounted tablets optimize prep workflows.",
+    content: `Paper receipt printing in hot kitchens creates clutter, lost tickets, and slow prep times. Replacing thermal printers with web-based tablets connected directly to customer QR carts guarantees instant order arrival.
+
+KDS Advantages:
+1. Color-coded prep timers (Green -> Amber -> Red urgency).
+2. One-tap "Order Ready" chime to alert waiters.
+3. Zero paper costs and zero missed orders.`,
+    category: "Hardware",
+    readTime: "4 min read",
+    date: "Jun 11, 2026",
+    author: "Sarah Jenkins",
+    coverImage: "https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&q=80"
+  }
+];
 
 export default function BlogPage() {
-  const posts = [
-    {
-      title: "How QR Menus Increase Average Table Value by 22%",
-      desc: "A comprehensive data study of digital ordering habits. Learn how dynamic pairings and high-res photography trigger upselling without waiter intervention.",
-      category: "Operations",
-      readTime: "5 min read",
-      date: "Jul 8, 2026",
-      author: "Sylvia Chen",
-    },
-    {
-      title: "The Ultimate Guide to Connecting QR Codes to Toast POS",
-      desc: "Step-by-step instructions on linking cloud-based contactless ordering carts directly with legacy POS kitchen printers and inventory nodes.",
-      category: "Integrations",
-      readTime: "7 min read",
-      date: "Jun 24, 2026",
-      author: "Vikram Mehta",
-    },
-    {
-      title: "How to Set Up a Kitchen Display System (KDS) Terminal",
-      desc: "Why thermal paper receipt printing is costing you money. Learn how color-coded timers on mounted tablets optimize prep workflows.",
-      category: "Hardware",
-      readTime: "4 min read",
-      date: "Jun 11, 2026",
-      author: "Sarah Jenkins",
-    },
-  ];
+  const [blogs, setBlogs] = useState(fallbackPosts);
+  const [loading, setLoading] = useState(true);
+  const [selectedPost, setSelectedPost] = useState(null);
+
+  useEffect(() => {
+    fetchBlogs();
+  }, []);
+
+  const fetchBlogs = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/blogs");
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.length > 0) {
+          setBlogs(data);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load blogs:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -47,93 +93,110 @@ export default function BlogPage() {
           {/* Header */}
           <div className="text-center space-y-4 max-w-2xl mx-auto">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-50 dark:bg-brand-950/40 border border-brand-100 dark:border-brand-900/50 text-xs font-bold text-brand-600 dark:text-brand-400 uppercase tracking-wider">
-              Growth Hub
+              Growth Hub & Guides
             </div>
             <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-5xl">
-              Restaurant Guides & Insights
+              Restaurant Guides & Industry Insights
             </h1>
             <p className="text-lg text-slate-500 dark:text-slate-400 leading-relaxed">
-              Actionable advice on table engineering, digital marketing, payment settlements, and kitchen logistics.
+              Actionable advice on table engineering, digital ordering, payment settlements, and kitchen logistics.
             </p>
           </div>
 
-          {/* Categories */}
-          <div className="flex gap-2 justify-center border-b border-slate-200 dark:border-slate-800 pb-6 max-w-lg mx-auto">
-            {["All Articles", "Operations", "Integrations", "Hardware", "Marketing"].map((cat, i) => (
-              <span
-                key={i}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${
-                  i === 0
-                    ? "bg-slate-900 border-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
-                    : "bg-white dark:bg-zinc-900 border-slate-200 dark:border-slate-800 text-slate-500 hover:text-slate-900"
-                }`}
-              >
-                {cat}
-              </span>
-            ))}
-          </div>
-
           {/* Posts Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {posts.map((post, idx) => (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {blogs.map((post) => (
               <article
-                key={idx}
-                className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-6 sm:p-8 shadow-xs hover:shadow-xl hover:scale-[1.01] transition-all duration-300 flex flex-col justify-between"
+                key={post._id}
+                onClick={() => setSelectedPost(post)}
+                className="bg-white dark:bg-zinc-900 rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl hover:shadow-2xl hover:scale-[1.01] transition-all cursor-pointer flex flex-col justify-between"
               >
-                <div className="space-y-4 text-left">
-                  <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase">
-                    <span className="text-brand-500">{post.category}</span>
-                    <span className="flex items-center gap-1">
-                      <ClockIcon className="w-3.5 h-3.5" /> {post.readTime}
-                    </span>
+                {post.coverImage && (
+                  <div className="h-48 w-full overflow-hidden relative bg-slate-100 dark:bg-zinc-800">
+                    <img
+                      src={post.coverImage}
+                      alt={post.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-4 left-4 bg-brand-500 text-white text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider shadow-md">
+                      {post.category || "Guide"}
+                    </div>
                   </div>
-                  
-                  <h3 className="text-xl font-extrabold text-slate-900 dark:text-white leading-snug hover:text-brand-500 transition-colors">
-                    <Link href="#">{post.title}</Link>
-                  </h3>
-                  
-                  <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-                    {post.desc}
-                  </p>
-                </div>
+                )}
 
-                <div className="border-t border-slate-100 dark:border-slate-800 pt-6 mt-6 flex justify-between items-center text-xs">
-                  <div>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">{post.author}</span>
-                    <span className="text-slate-400 block mt-0.5">{post.date}</span>
+                <div className="p-6 space-y-4 flex-grow flex flex-col justify-between">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-xs text-slate-400">
+                      <ClockIcon className="w-3.5 h-3.5" />
+                      <span>{post.readTime || "5 min read"}</span>
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-snug hover:text-brand-500 transition-colors">
+                      {post.title}
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-3 leading-relaxed">
+                      {post.summary || post.desc}
+                    </p>
                   </div>
-                  <Link
-                    href="#"
-                    className="inline-flex items-center gap-1 font-bold text-brand-600 dark:text-brand-400 hover:text-brand-700"
-                  >
-                    Read Guide <ArrowRightIcon className="w-3.5 h-3.5" />
-                  </Link>
+
+                  <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-semibold text-brand-500">
+                    <span>Read Article</span>
+                    <ArrowRightIcon className="w-4 h-4" />
+                  </div>
                 </div>
               </article>
             ))}
           </div>
 
-          {/* BLOG NEWSLETTER CALLOUT */}
-          <div className="bg-slate-900 text-white rounded-3xl p-8 max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 border border-slate-800 shadow-xl text-left">
-            <div className="space-y-2">
-              <h4 className="text-lg font-bold">Subscribe to Restaurant Growth hacks</h4>
-              <p className="text-xs text-slate-400 max-w-sm">
-                Get monthly roundups of bestseller analytics tips, QR menu updates, and cashier optimization steps.
-              </p>
-            </div>
-            <div className="flex gap-2 w-full md:w-auto">
-              <input
-                type="email"
-                placeholder="Enter work email"
-                className="bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 w-full sm:w-60"
-              />
-              <button className="bg-brand-500 hover:bg-brand-600 text-white font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1 flex-none shadow-md">
-                Subscribe <BookOpenIcon className="w-3.5 h-3.5" />
-              </button>
+        </div>
+
+        {/* Read Blog Article Modal */}
+        {selectedPost && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 animate-fade-in text-slate-800 dark:text-slate-200">
+            <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden max-h-[90vh] flex flex-col text-left">
+              
+              <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between flex-none bg-slate-50 dark:bg-zinc-950">
+                <div>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-brand-500 bg-brand-50 dark:bg-brand-950/40 px-2.5 py-1 rounded-full border border-brand-100 dark:border-brand-900/50">
+                    {selectedPost.category || "Guide"}
+                  </span>
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white mt-2 leading-tight">
+                    {selectedPost.title}
+                  </h2>
+                </div>
+                <button
+                  onClick={() => setSelectedPost(null)}
+                  className="w-8 h-8 rounded-full bg-slate-200 dark:bg-zinc-800 flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="p-6 sm:p-8 space-y-6 overflow-y-auto flex-grow text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                {selectedPost.coverImage && (
+                  <img
+                    src={selectedPost.coverImage}
+                    alt={selectedPost.title}
+                    className="w-full h-56 object-cover rounded-2xl border border-slate-200 dark:border-slate-800 shadow-md"
+                  />
+                )}
+                <div className="whitespace-pre-line text-slate-700 dark:text-slate-200 font-normal space-y-4">
+                  {selectedPost.content || selectedPost.summary || selectedPost.desc}
+                </div>
+              </div>
+
+              <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-zinc-950 flex justify-end flex-none">
+                <button
+                  onClick={() => setSelectedPost(null)}
+                  className="px-5 py-2.5 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-bold text-xs rounded-xl shadow-xs cursor-pointer"
+                >
+                  Close Article
+                </button>
+              </div>
+
             </div>
           </div>
+        )}
 
-        </div>
       </main>
 
       <Footer />

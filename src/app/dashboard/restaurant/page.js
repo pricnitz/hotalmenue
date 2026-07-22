@@ -53,6 +53,7 @@ export default function RestaurantDashboard() {
     logo: "",
     currency: "INR",
     themeColor: "orange",
+    isLocked: false,
   });
 
   // DB States
@@ -150,6 +151,7 @@ export default function RestaurantDashboard() {
           logo: data.logo || "",
           currency: data.currency || "INR",
           themeColor: data.themeColor || "orange",
+          isLocked: data.isLocked === true,
         });
       }
     } catch (e) {
@@ -1618,41 +1620,54 @@ export default function RestaurantDashboard() {
 
             {/* TAB 4: PROFILE & BRANDING SETTINGS */}
             {activeTab === "settings" && (
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 text-left animate-fade-in">
-
-                {/* Left form inputs - profile and passwords */}
-                <div className="lg:col-span-8 space-y-8">
-
-                  {/* Profile card form */}
-                  <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-8 rounded-3xl shadow-xs space-y-6">
-                    <div className="space-y-1 pb-4 border-b border-slate-100 dark:border-slate-800">
-                      <h3 className="text-lg font-bold text-slate-900 dark:text-white font-sans">Update Restaurant Details</h3>
-                      <p className="text-xs text-slate-400">Configure owner contact information, billing address, and GST nodes.</p>
+              <div className="space-y-8 animate-fade-in text-left">
+                {profile.isLocked && (
+                  <div className="bg-amber-500/10 border-2 border-amber-500/30 rounded-2xl p-4 flex items-center gap-3 text-amber-700 dark:text-amber-300 text-xs font-semibold shadow-xs">
+                    <span className="text-2xl flex-none">🔒</span>
+                    <div>
+                      <p className="font-extrabold text-sm">Restaurant Profile & Theme Locked</p>
+                      <p className="text-xs opacity-90 mt-0.5">Your profile details and theme settings are finalized and locked by Master Admin. To request any changes, please email support at <a href="mailto:info@hotelmenu.in" className="underline font-bold">info@hotelmenu.in</a> or contact your dedicated account representative.</p>
                     </div>
+                  </div>
+                )}
 
-                    <form onSubmit={handleProfileSubmit} className="space-y-4">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Restaurant Name</label>
-                          <input
-                            type="text"
-                            required
-                            value={profile.restaurantName}
-                            onChange={(e) => setProfile({ ...profile, restaurantName: e.target.value })}
-                            className="block w-full rounded-xl border border-slate-200 dark:border-slate-850 bg-slate-50 dark:bg-zinc-950 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Owner Name</label>
-                          <input
-                            type="text"
-                            required
-                            value={profile.ownerName}
-                            onChange={(e) => setProfile({ ...profile, ownerName: e.target.value })}
-                            className="block w-full rounded-xl border border-slate-200 dark:border-slate-850 bg-slate-50 dark:bg-zinc-950 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none"
-                          />
-                        </div>
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 text-left">
+
+                  {/* Left form inputs - profile and passwords */}
+                  <div className="lg:col-span-8 space-y-8">
+
+                    {/* Profile card form */}
+                    <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-8 rounded-3xl shadow-xs space-y-6">
+                      <div className="space-y-1 pb-4 border-b border-slate-100 dark:border-slate-800">
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-white font-sans">Update Restaurant Details</h3>
+                        <p className="text-xs text-slate-400">Configure owner contact information, billing address, and GST nodes.</p>
                       </div>
+
+                      <form onSubmit={handleProfileSubmit} className="space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="space-y-1">
+                            <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Restaurant Name</label>
+                            <input
+                              type="text"
+                              required
+                              disabled={profile.isLocked}
+                              value={profile.restaurantName}
+                              onChange={(e) => setProfile({ ...profile, restaurantName: e.target.value })}
+                              className="block w-full rounded-xl border border-slate-200 dark:border-slate-850 bg-slate-50 dark:bg-zinc-950 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Owner Name</label>
+                            <input
+                              type="text"
+                              required
+                              disabled={profile.isLocked}
+                              value={profile.ownerName}
+                              onChange={(e) => setProfile({ ...profile, ownerName: e.target.value })}
+                              className="block w-full rounded-xl border border-slate-200 dark:border-slate-850 bg-slate-50 dark:bg-zinc-950 px-3.5 py-2.5 text-sm focus:border-brand-500 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
+                            />
+                          </div>
+                        </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1">
@@ -1687,7 +1702,7 @@ export default function RestaurantDashboard() {
                               className="flex-grow min-w-0 block w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-855 bg-slate-100 dark:bg-zinc-955/40 rounded-l-xl text-sm text-slate-400 focus:outline-none cursor-not-allowed font-semibold"
                             />
                             <span className="inline-flex items-center px-3.5 rounded-r-xl border border-l-0 border-slate-200 dark:border-slate-805 bg-slate-100 dark:bg-zinc-800 text-slate-400 text-xs font-bold select-none">
-                              .quickbite.menu
+                              .tablemenu.in
                             </span>
                           </div>
                         </div>
@@ -1851,17 +1866,17 @@ export default function RestaurantDashboard() {
                       <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block">Brand Palette Theme</span>
                       <div className="space-y-2">
                         {[
-                          { id: "orange", label: "Warm Amber", color: "bg-orange-500" },
-                          { id: "red", label: "Sunset Red", color: "bg-red-500" },
-                          { id: "green", label: "Emerald Mint", color: "bg-emerald-500" },
-                          { id: "blue", label: "Ocean Blue", color: "bg-blue-500" },
-                          { id: "charcoal", label: "Dark Slate", color: "bg-slate-800" },
+                          { id: "orange", label: "🔥 Vibrant Sunset / Orange (Cafes & Fast Food)", color: "bg-orange-500" },
+                          { id: "gold", label: "👑 Royal Gold / Luxury (Fine Dining)", color: "bg-amber-400" },
+                          { id: "velvet", label: "🌙 Dark Velvet / Midnight (Lounges & Clubs)", color: "bg-purple-600" },
+                          { id: "emerald", label: "🌿 Minimalist Emerald (Healthy & Organic)", color: "bg-emerald-500" },
                         ].map((theme) => (
                           <button
                             key={theme.id}
                             type="button"
+                            disabled={profile.isLocked}
                             onClick={() => setProfile({ ...profile, themeColor: theme.id })}
-                            className={`w-full inline-flex items-center gap-2 p-2.5 border rounded-xl text-xs font-bold cursor-pointer transition-all ${profile.themeColor === theme.id
+                            className={`w-full inline-flex items-center gap-2 p-2.5 border rounded-xl text-xs font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${profile.themeColor === theme.id
                               ? "bg-slate-50 dark:bg-zinc-800 border-slate-900 dark:border-slate-200"
                               : "border-slate-200 dark:border-slate-800 hover:bg-slate-50"
                               }`}
@@ -1884,7 +1899,8 @@ export default function RestaurantDashboard() {
                 </div>
 
               </div>
-            )}
+            </div>
+          )}
 
             {activeTab === "analytics" && (
               <div className="space-y-8 animate-fade-in text-left">

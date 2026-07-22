@@ -44,6 +44,6 @@ app.prepare().then(() => {
   });
 
   httpServer.listen(port, () => {
-    console.log(`> QuickBite Realtime Server ready on http://${hostname}:${port} with Socket.IO 🚀`);
+    console.log(`> TableMenu.in Realtime Server ready on http://${hostname}:${port} with Socket.IO 🚀`);
   });
 });

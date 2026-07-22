@@ -46,7 +46,7 @@ export async function PUT(request, { params }) {
     const fields = [
       "name", "ownerName", "phone", "email", "address", 
       "gstNumber", "planType", "expiryDate", "status", 
-      "logoEmoji", "themeColor", "password", "userId", "logo", "currency"
+      "logoEmoji", "themeColor", "password", "userId", "logo", "currency", "isLocked"
     ];
 
     fields.forEach((field) => {

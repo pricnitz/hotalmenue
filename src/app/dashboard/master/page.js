@@ -49,6 +49,39 @@ export default function MasterDashboard() {
     discount: 0,
   });
 
+  // Master Tab Switch State
+  const [activeMasterTab, setActiveMasterTab] = useState("outlets"); // "outlets" | "website_cms"
+  const [cmsTab, setCmsTab] = useState("blogs"); // "blogs" | "faqs" | "pricing"
+
+  // Website CMS States
+  const [blogsList, setBlogsList] = useState([]);
+  const [faqsList, setFaqsList] = useState([]);
+  const [pricingList, setPricingList] = useState([]);
+  
+  // Blog Form
+  const [blogForm, setBlogForm] = useState({ title: "", category: "Operations", summary: "", content: "", coverImage: "" });
+  const [editingBlogId, setEditingBlogId] = useState(null);
+
+  // FAQ Form
+  const [faqForm, setFaqForm] = useState({ category: "general", question: "", answer: "" });
+  const [editingFaqId, setEditingFaqId] = useState(null);
+
+  // Outlets Search & Filter States
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [planFilter, setPlanFilter] = useState("all");
+
+  const filteredRestaurants = restaurants.filter((r) => {
+    const matchesSearch =
+      (r.name && r.name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (r.ownerName && r.ownerName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (r.email && r.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (r.phone && r.phone.includes(searchQuery));
+    const matchesStatus = statusFilter === "all" || r.status === statusFilter;
+    const matchesPlan = planFilter === "all" || r.planType === planFilter;
+    return matchesSearch && matchesStatus && matchesPlan;
+  });
+
   // Fetch restaurants from API
   const fetchRestaurants = async () => {
     try {
@@ -65,10 +98,131 @@ export default function MasterDashboard() {
     }
   };
 
+  const fetchCmsData = async () => {
+    try {
+      const [blogRes, faqRes, priceRes] = await Promise.all([
+        fetch("/api/blogs"),
+        fetch("/api/faqs"),
+        fetch("/api/pricing")
+      ]);
+      if (blogRes.ok) setBlogsList(await blogRes.json());
+      if (faqRes.ok) setFaqsList(await faqRes.json());
+      if (priceRes.ok) setPricingList(await priceRes.json());
+    } catch (e) {
+      console.error("Error fetching CMS data:", e);
+    }
+  };
+
   useEffect(() => {
     setIsMounted(true);
     fetchRestaurants();
+    fetchCmsData();
   }, []);
+
+  // CMS CRUD Handlers
+  const handleBlogSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const url = editingBlogId ? `/api/blogs/${editingBlogId}` : "/api/blogs";
+      const method = editingBlogId ? "PUT" : "POST";
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(blogForm),
+      });
+      if (res.ok) {
+        setBlogForm({ title: "", category: "Operations", summary: "", content: "", coverImage: "" });
+        setEditingBlogId(null);
+        fetchCmsData();
+      }
+    } catch (e) {
+      console.error("Error saving blog:", e);
+    }
+  };
+
+  const handleEditBlog = (blog) => {
+    setEditingBlogId(blog._id);
+    setBlogForm({
+      title: blog.title || "",
+      category: blog.category || "Operations",
+      summary: blog.summary || "",
+      content: blog.content || "",
+      coverImage: blog.coverImage || "",
+    });
+  };
+
+  const handleDeleteBlog = async (id) => {
+    if (!confirm("Are you sure you want to delete this blog post?")) return;
+    try {
+      const res = await fetch(`/api/blogs/${id}`, { method: "DELETE" });
+      if (res.ok) fetchCmsData();
+    } catch (e) {
+      console.error("Error deleting blog:", e);
+    }
+  };
+
+  const handleFaqSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const url = editingFaqId ? `/api/faqs/${editingFaqId}` : "/api/faqs";
+      const method = editingFaqId ? "PUT" : "POST";
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(faqForm),
+      });
+      if (res.ok) {
+        setFaqForm({ category: "general", question: "", answer: "" });
+        setEditingFaqId(null);
+        fetchCmsData();
+      }
+    } catch (e) {
+      console.error("Error saving FAQ:", e);
+    }
+  };
+
+  const handleEditFaq = (faq) => {
+    setEditingFaqId(faq._id);
+    setFaqForm({
+      category: faq.category || "general",
+      question: faq.question || "",
+      answer: faq.answer || "",
+    });
+  };
+
+  const handleDeleteFaq = async (id) => {
+    if (!confirm("Are you sure you want to delete this FAQ?")) return;
+    try {
+      const res = await fetch(`/api/faqs/${id}`, { method: "DELETE" });
+      if (res.ok) fetchCmsData();
+    } catch (e) {
+      console.error("Error deleting FAQ:", e);
+    }
+  };
+
+  const handlePricingPlanChange = (index, field, value) => {
+    setPricingList((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  };
+
+  const handleSavePricing = async () => {
+    try {
+      const res = await fetch("/api/pricing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(pricingList),
+      });
+      if (res.ok) {
+        alert("Pricing plans saved & published successfully!");
+        fetchCmsData();
+      }
+    } catch (e) {
+      console.error("Error saving pricing plans:", e);
+    }
+  };
 
   const handleLogout = () => {
     setLoggingOut(true);
@@ -162,6 +316,22 @@ export default function MasterDashboard() {
     }
   };
 
+  // 4b. Toggle Profile & Theme Lock via PUT
+  const toggleLock = async (id, currentVal) => {
+    try {
+      const res = await fetch(`/api/restaurants/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isLocked: !currentVal }),
+      });
+      if (res.ok) {
+        setRestaurants(prev => prev.map(r => r._id === id ? { ...r, isLocked: !currentVal } : r));
+      }
+    } catch (error) {
+      console.error("Error toggling lock:", error);
+    }
+  };
+
   // 5. Open branding modal
   const openBrandingModal = (rest) => {
     setSelectedRest(rest);
@@ -172,17 +342,21 @@ export default function MasterDashboard() {
     setActiveModal("brand");
   };
 
-  // 6. Open billing modal
+  // 6. Open billing modal with dynamic currency (₹ for INR, $ for USD)
   const openBillingModal = (rest) => {
     setSelectedRest(rest);
-    let basePrice = 79;
-    if (rest.planType === "Starter") basePrice = 29;
-    if (rest.planType === "Pro Enterprise") basePrice = 149;
+    const isINR = rest.currency === "INR" || rest.currency === "₹" || (rest.address && /india/i.test(rest.address));
+    const symbol = isINR ? "₹" : "$";
+
+    let basePrice = isINR ? 2499 : 79;
+    if (rest.planType === "Starter") basePrice = isINR ? 999 : 29;
+    if (rest.planType === "Pro Enterprise") basePrice = isINR ? 4999 : 149;
 
     setBillingForm({
       invoiceNo: `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
       date: new Date().toISOString().split("T")[0],
       amount: basePrice,
+      currencySymbol: symbol,
       gstRate: 18,
       discount: 0,
     });
@@ -194,6 +368,7 @@ export default function MasterDashboard() {
     const subtotal = billingForm.amount - billingForm.discount;
     const gstVal = (subtotal * billingForm.gstRate) / 100;
     const total = subtotal + gstVal;
+    const curr = billingForm.currencySymbol || "$";
 
     printWindow.document.write(`
       <html>
@@ -221,7 +396,7 @@ export default function MasterDashboard() {
         <body>
           <div class="header">
             <div>
-              <div class="title">QuickBite OS</div>
+              <div class="title">TableMenu.in OS</div>
               <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">Premium Restaurant Management SaaS</p>
             </div>
             <div style="text-align: right;">
@@ -258,11 +433,11 @@ export default function MasterDashboard() {
             <tbody>
               <tr>
                 <td>
-                  <strong>QuickBite Digital QR Menu License</strong><br/>
+                  <strong>TableMenu.in Digital QR Menu License</strong><br/>
                   <span style="font-size: 11px; color: #64748b;">Access tier: ${selectedRest.planType} Plan. Live table manager & active waiter portals.</span>
                 </td>
-                <td style="text-align: right; vertical-align: top;">$${billingForm.amount.toFixed(2)}</td>
-                <td style="text-align: right; vertical-align: top;">$${billingForm.amount.toFixed(2)}</td>
+                <td style="text-align: right; vertical-align: top;">${curr}${billingForm.amount.toFixed(2)}</td>
+                <td style="text-align: right; vertical-align: top;">${curr}${billingForm.amount.toFixed(2)}</td>
               </tr>
             </tbody>
           </table>
@@ -270,26 +445,26 @@ export default function MasterDashboard() {
           <div class="total-section">
             <div class="total-row">
               <span>Subtotal:</span>
-              <span>$${billingForm.amount.toFixed(2)}</span>
+              <span>${curr}${billingForm.amount.toFixed(2)}</span>
             </div>
             ${billingForm.discount > 0 ? `
             <div class="total-row" style="color: #ef4444;">
               <span>Discount:</span>
-              <span>-$${billingForm.discount.toFixed(2)}</span>
+              <span>-${curr}${billingForm.discount.toFixed(2)}</span>
             </div>
             ` : ""}
             <div class="total-row">
               <span>GST (${billingForm.gstRate}%):</span>
-              <span>$${gstVal.toFixed(2)}</span>
+              <span>${curr}${gstVal.toFixed(2)}</span>
             </div>
             <div class="total-row grand">
               <span>Total Paid:</span>
-              <span>$${total.toFixed(2)}</span>
+              <span>${curr}${total.toFixed(2)}</span>
             </div>
           </div>
 
           <div class="footer">
-            <p>Thank you for choosing QuickBite OS to power your dining experience!</p>
+            <p>Thank you for choosing TableMenu.in OS to power your dining experience!</p>
             <p>This is a system generated invoice and requires no signature.</p>
           </div>
 
@@ -358,11 +533,11 @@ export default function MasterDashboard() {
             <QrCodeIcon className="h-5 w-5" />
           </div>
           <span className="font-extrabold text-base tracking-tight">
-            QuickBite <span className="text-[9px] bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-slate-400 font-extrabold px-2 py-0.5 rounded-md ml-1 border border-slate-200/50 uppercase">MASTER PANEL</span>
+            TableMenu.in <span className="text-[9px] bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-slate-400 font-extrabold px-2 py-0.5 rounded-md ml-1 border border-slate-200/50 uppercase">MASTER PANEL</span>
           </span>
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-xs text-slate-500 font-semibold hidden sm:inline">Logged in as master@quickbite.com</span>
+          <span className="text-xs text-slate-500 font-semibold hidden sm:inline">Logged in as master@tablemenu.in</span>
           <button
             onClick={handleLogout}
             disabled={loggingOut}
@@ -408,148 +583,572 @@ export default function MasterDashboard() {
               <div className="space-y-0.5">
                 <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider block leading-none">{widget.label}</span>
                 <span className="text-2xl font-black text-slate-900 dark:text-white block mt-0.5">{widget.val}</span>
-                <span className="text-[10px] text-slate-400 block mt-0.5">{widget.sub}</span>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Master Outlets Table */}
-        <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-xs text-left">
-          <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Active Restaurant Subscriptions (MongoDB)</h3>
-            <span className="text-xs text-slate-400 font-semibold">{totalRestaurants} outlets total</span>
-          </div>
+        {/* Master Navigation Tab Switcher */}
+        <div className="flex items-center gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
+          <button
+            onClick={() => setActiveMasterTab("outlets")}
+            className={`px-5 py-2.5 rounded-2xl text-xs font-extrabold transition-all cursor-pointer ${
+              activeMasterTab === "outlets"
+                ? "bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-md"
+                : "bg-white dark:bg-zinc-900 text-slate-500 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-800"
+            }`}
+          >
+            🏢 Restaurant Outlets ({totalRestaurants})
+          </button>
+          <button
+            onClick={() => setActiveMasterTab("website_cms")}
+            className={`px-5 py-2.5 rounded-2xl text-xs font-extrabold transition-all cursor-pointer ${
+              activeMasterTab === "website_cms"
+                ? "bg-brand-500 text-white shadow-md shadow-brand-500/20"
+                : "bg-white dark:bg-zinc-900 text-slate-500 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-800"
+            }`}
+          >
+            🌐 Website Info CMS (Blogs, FAQs, Pricing)
+          </button>
+        </div>
 
-          {loadingList ? (
-            <div className="text-center py-20">
-              <div className="w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-              <p className="text-xs text-slate-400 mt-4">Connecting to local MongoDB...</p>
+        {/* TAB 1: RESTAURANT OUTLETS */}
+        {activeMasterTab === "outlets" && (
+          <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-xs text-left">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Active Restaurant Subscriptions (MongoDB)</h3>
+                <p className="text-xs text-slate-400">Showing {filteredRestaurants.length} of {totalRestaurants} registered outlets</p>
+              </div>
+
+              {/* Search & Filters */}
+              <div className="flex flex-wrap items-center gap-3">
+                <input
+                  type="text"
+                  placeholder="Search name, email, phone..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-zinc-950 px-3.5 py-2 text-xs focus:outline-none focus:border-brand-500 w-52"
+                />
+                <select
+                  value={planFilter}
+                  onChange={(e) => setPlanFilter(e.target.value)}
+                  className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-zinc-950 px-3.5 py-2 text-xs focus:outline-none focus:border-brand-500"
+                >
+                  <option value="all">All Plans</option>
+                  <option value="Starter">Starter</option>
+                  <option value="Growth">Growth</option>
+                  <option value="Pro Enterprise">Pro Enterprise</option>
+                </select>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-zinc-950 px-3.5 py-2 text-xs focus:outline-none focus:border-brand-500"
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="Active">Active</option>
+                  <option value="Expired">Expired</option>
+                </select>
+              </div>
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 dark:bg-zinc-950 border-b border-slate-200 dark:border-slate-850">
-                    <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Restaurant / Logo</th>
-                    <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Owner & Contact</th>
-                    <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">GST No.</th>
-                    <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Plan & Expiry</th>
-                    <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Status Toggle</th>
-                    <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {restaurants.map((rest) => (
-                    <tr key={rest._id} className="hover:bg-slate-50/50 dark:hover:bg-zinc-900/10 transition-colors">
-                      
-                      {/* Logo & Name */}
-                      <td className="p-4 flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-zinc-800 flex items-center justify-center text-xl shadow-inner border border-slate-200/50 dark:border-slate-700">
-                          {rest.logoEmoji}
-                        </div>
-                        <div className="space-y-0.5">
-                          <span className="font-bold text-slate-900 dark:text-white text-sm block leading-snug">{rest.name}</span>
-                          <div className="flex items-center gap-1.5">
-                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                            <span className="text-[10px] text-slate-400 capitalize font-medium">{rest.themeColor} theme</span>
+
+            {loadingList ? (
+              <div className="text-center py-20">
+                <div className="w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <p className="text-xs text-slate-400 mt-4">Connecting to local MongoDB...</p>
+              </div>
+            ) : filteredRestaurants.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 dark:bg-zinc-950 border-b border-slate-200 dark:border-slate-850">
+                      <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Restaurant / Logo</th>
+                      <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Owner & Contact</th>
+                      <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">GST No.</th>
+                      <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Plan & Expiry</th>
+                      <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Status Toggle</th>
+                      <th className="p-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {filteredRestaurants.map((rest) => (
+                      <tr key={rest._id} className="hover:bg-slate-50/50 dark:hover:bg-zinc-900/10 transition-colors">
+                        
+                        {/* Logo & Name */}
+                        <td className="p-4 flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-zinc-800 flex items-center justify-center text-xl shadow-inner border border-slate-200/50 dark:border-slate-700">
+                            {rest.logoEmoji}
                           </div>
-                        </div>
-                      </td>
-
-                      {/* Owner & Contact */}
-                      <td className="p-4">
-                        <div className="space-y-0.5 text-xs text-slate-500">
-                          <p className="font-semibold text-slate-800 dark:text-slate-250">{rest.ownerName}</p>
-                          <p className="flex items-center gap-1"><MailIcon className="w-3.5 h-3.5 opacity-60" /> {rest.email}</p>
-                          <p className="flex items-center gap-1"><PhoneIcon className="w-3.5 h-3.5 opacity-60" /> {rest.phone}</p>
-                        </div>
-                      </td>
-
-                      {/* GST Number */}
-                      <td className="p-4 font-mono text-xs text-slate-400 font-semibold">{rest.gstNumber || "N/A"}</td>
-
-                      {/* Plan & Expiry */}
-                      <td className="p-4">
-                        <div className="space-y-2">
-                          <select
-                            value={rest.planType}
-                            onChange={(e) => handlePlanChange(rest._id, e.target.value)}
-                            className="bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-brand-600 dark:text-brand-400 rounded-lg px-2 py-1 focus:outline-none"
-                          >
-                            <option value="Starter">Starter ($29/mo)</option>
-                            <option value="Growth">Growth ($79/mo)</option>
-                            <option value="Pro Enterprise">Pro ($149/mo)</option>
-                          </select>
-                          
-                          <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                            <CalendarIcon className="w-3.5 h-3.5 opacity-60" />
-                            <input
-                              type="date"
-                              value={rest.expiryDate}
-                              onChange={(e) => handleExpiryChange(rest._id, e.target.value)}
-                              className="bg-transparent border-0 p-0 text-xs focus:outline-none focus:ring-0 text-slate-500 font-medium"
-                            />
+                          <div className="space-y-0.5">
+                            <span className="font-bold text-slate-900 dark:text-white text-sm block leading-snug">{rest.name}</span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                              <span className="text-[11px] text-slate-400 font-mono">id: {rest._id.slice(-6)}</span>
+                            </div>
                           </div>
-                        </div>
-                      </td>
+                        </td>
 
-                      {/* Status Toggle Slider */}
-                      <td className="p-4">
-                        <div className="flex items-center gap-3">
+                        {/* Owner */}
+                        <td className="p-4">
+                          <span className="font-bold text-slate-800 dark:text-slate-200 text-xs block">{rest.ownerName}</span>
+                          <span className="text-[11px] text-slate-400 block">{rest.email}</span>
+                          <span className="text-[11px] text-slate-400 block">{rest.phone}</span>
+                        </td>
+
+                        {/* GST */}
+                        <td className="p-4">
+                          <span className="text-xs font-mono text-slate-500 bg-slate-100 dark:bg-zinc-800 px-2 py-1 rounded-md">
+                            {rest.gstNumber || "N/A"}
+                          </span>
+                        </td>
+
+                        {/* Plan & Expiry */}
+                        <td className="p-4 space-y-1">
+                          <span className="text-xs font-extrabold text-brand-600 dark:text-brand-400 uppercase tracking-wider block">
+                            {rest.planType}
+                          </span>
+                          <input
+                            type="date"
+                            value={rest.expiryDate}
+                            onChange={(e) => handleExpiryChange(rest._id, e.target.value)}
+                            className="bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-slate-800 rounded-lg px-2 py-1 text-xs text-slate-700 dark:text-slate-300 focus:outline-none"
+                          />
+                        </td>
+
+                        {/* Status Toggle */}
+                        <td className="p-4">
                           <button
                             onClick={() => toggleStatus(rest._id, rest.status)}
-                            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                              rest.status === "Active" ? "bg-emerald-500" : "bg-slate-300 dark:bg-zinc-700"
+                            className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                              rest.status === "Active"
+                                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                                : "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20"
                             }`}
                           >
-                            <span
-                              className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
-                                rest.status === "Active" ? "translate-x-5" : "translate-x-0"
+                            {rest.status === "Active" ? "● Active" : "○ Expired"}
+                          </button>
+                        </td>
+
+                        {/* Actions */}
+                        <td className="p-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => toggleLock(rest._id, rest.isLocked)}
+                              className={`px-2.5 py-1.5 rounded-lg text-xs font-extrabold shadow-2xs transition-colors cursor-pointer ${
+                                rest.isLocked
+                                  ? "bg-amber-500 text-slate-950 hover:bg-amber-600"
+                                  : "bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300"
                               }`}
-                            />
-                          </button>
-                          <span className={`text-[10px] font-extrabold uppercase ${
-                            rest.status === "Active"
-                              ? "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 px-2 py-0.5 rounded-full"
-                              : "text-red-500 bg-red-50 dark:bg-red-950/20 px-2 py-0.5 rounded-full"
-                          }`}>
-                            {rest.status}
-                          </span>
-                        </div>
-                      </td>
+                            >
+                              {rest.isLocked ? "🔒 Locked" : "🔓 Lock"}
+                            </button>
+                            <button
+                              onClick={() => openBrandingModal(rest)}
+                              className="bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-350 rounded-lg px-2.5 py-1.5 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                            >
+                              Brand Config
+                            </button>
+                            <button
+                              onClick={() => openBillingModal(rest)}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg px-2.5 py-1.5 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                            >
+                              Generate Bill
+                            </button>
+                            <button
+                              onClick={() => openStatsModal(rest)}
+                              className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200 text-white rounded-lg px-2.5 py-1.5 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                            >
+                              View Stats
+                            </button>
+                          </div>
+                        </td>
 
-                      {/* Actions buttons */}
-                      <td className="p-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => openBrandingModal(rest)}
-                            className="bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-350 rounded-lg px-2.5 py-1.5 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
-                          >
-                            Brand Config
-                          </button>
-                          <button
-                            onClick={() => openBillingModal(rest)}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg px-2.5 py-1.5 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
-                          >
-                            Generate Bill
-                          </button>
-                          <button
-                            onClick={() => openStatsModal(rest)}
-                            className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200 text-white rounded-lg px-2.5 py-1.5 text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
-                          >
-                            View Stats
-                          </button>
-                        </div>
-                      </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-16">
+                <p className="text-slate-400 text-sm font-semibold">No restaurant outlets found matching your search and filter criteria.</p>
+              </div>
+            )}
+          </div>
+        )}
 
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        {/* TAB 2: WEBSITE INFO CMS */}
+        {activeMasterTab === "website_cms" && (
+          <div className="space-y-8 animate-fade-in text-left">
+            
+            {/* CMS Sub Navigation */}
+            <div className="flex items-center gap-2 bg-slate-100 dark:bg-zinc-850 p-1.5 rounded-2xl w-fit">
+              <button
+                onClick={() => setCmsTab("blogs")}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  cmsTab === "blogs" ? "bg-white dark:bg-zinc-950 text-slate-900 dark:text-white shadow-xs" : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                }`}
+              >
+                📝 Dynamic Blogs ({blogsList.length})
+              </button>
+              <button
+                onClick={() => setCmsTab("faqs")}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  cmsTab === "faqs" ? "bg-white dark:bg-zinc-950 text-slate-900 dark:text-white shadow-xs" : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                }`}
+              >
+                ❓ Help FAQs ({faqsList.length})
+              </button>
+              <button
+                onClick={() => setCmsTab("pricing")}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  cmsTab === "pricing" ? "bg-white dark:bg-zinc-950 text-slate-900 dark:text-white shadow-xs" : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                }`}
+              >
+                💰 Pricing Plans ({pricingList.length || 3})
+              </button>
             </div>
-          )}
-        </div>
+
+            {/* CMS SUB-TAB 1: BLOGS MANAGER */}
+            {cmsTab === "blogs" && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                
+                {/* Blog Creation Form */}
+                <div className="lg:col-span-5 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl shadow-xs space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <h3 className="font-bold text-slate-900 dark:text-white text-base">
+                      {editingBlogId ? "Edit Blog Article" : "Create New Blog Article"}
+                    </h3>
+                    {editingBlogId && (
+                      <button
+                        onClick={() => { setEditingBlogId(null); setBlogForm({ title: "", category: "Operations", summary: "", content: "", coverImage: "" }); }}
+                        className="text-xs text-brand-500 font-bold hover:underline"
+                      >
+                        Cancel Edit
+                      </button>
+                    )}
+                  </div>
+
+                  <form onSubmit={handleBlogSubmit} className="space-y-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold uppercase text-slate-400">Article Title</label>
+                      <input
+                        type="text"
+                        required
+                        value={blogForm.title}
+                        onChange={(e) => setBlogForm({ ...blogForm, title: e.target.value })}
+                        placeholder="e.g. How QR Menus Increase Table Turnover"
+                        className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-zinc-950 px-3.5 py-2.5 text-xs focus:outline-none focus:border-brand-500"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold uppercase text-slate-400">Category</label>
+                        <select
+                          value={blogForm.category}
+                          onChange={(e) => setBlogForm({ ...blogForm, category: e.target.value })}
+                          className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-zinc-950 px-3.5 py-2.5 text-xs focus:outline-none focus:border-brand-500"
+                        >
+                          <option value="Operations">Operations</option>
+                          <option value="Guides">Guides</option>
+                          <option value="Hardware">Hardware</option>
+                          <option value="Marketing">Marketing</option>
+                        </select>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold uppercase text-slate-400">Cover Image URL</label>
+                        <input
+                          type="text"
+                          value={blogForm.coverImage}
+                          onChange={(e) => setBlogForm({ ...blogForm, coverImage: e.target.value })}
+                          placeholder="https://..."
+                          className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-zinc-950 px-3.5 py-2.5 text-xs focus:outline-none focus:border-brand-500"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold uppercase text-slate-400">Short Summary</label>
+                      <textarea
+                        rows={2}
+                        required
+                        value={blogForm.summary}
+                        onChange={(e) => setBlogForm({ ...blogForm, summary: e.target.value })}
+                        placeholder="Brief 2-line intro snippet..."
+                        className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-zinc-950 px-3.5 py-2.5 text-xs focus:outline-none focus:border-brand-500"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold uppercase text-slate-400">Full Article Content</label>
+                      <textarea
+                        rows={6}
+                        required
+                        value={blogForm.content}
+                        onChange={(e) => setBlogForm({ ...blogForm, content: e.target.value })}
+                        placeholder="Write full article body text..."
+                        className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-zinc-950 px-3.5 py-2.5 text-xs focus:outline-none focus:border-brand-500"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full py-3 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-extrabold shadow-md active:scale-95 transition-all cursor-pointer"
+                    >
+                      {editingBlogId ? "Update Blog Post" : "Publish Blog Post"}
+                    </button>
+                  </form>
+                </div>
+
+                {/* Published Blogs List */}
+                <div className="lg:col-span-7 space-y-4">
+                  <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xs space-y-4">
+                    <h3 className="font-bold text-slate-900 dark:text-white text-base">Published Blog Posts ({blogsList.length})</h3>
+                    <div className="space-y-3">
+                      {blogsList.map((blog) => (
+                        <div key={blog._id} className="p-4 rounded-2xl bg-slate-50 dark:bg-zinc-950 border border-slate-200/50 dark:border-slate-800 flex items-start justify-between gap-4">
+                          <div className="space-y-1 text-left">
+                            <span className="text-[9px] font-extrabold uppercase bg-brand-500/10 text-brand-500 px-2 py-0.5 rounded-md">
+                              {blog.category}
+                            </span>
+                            <h4 className="font-bold text-slate-900 dark:text-white text-sm">{blog.title}</h4>
+                            <p className="text-xs text-slate-400 line-clamp-2">{blog.summary}</p>
+                          </div>
+                          <div className="flex items-center gap-2 flex-none">
+                            <button
+                              onClick={() => handleEditBlog(blog)}
+                              className="px-3 py-1.5 bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold hover:bg-slate-300 cursor-pointer"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteBlog(blog._id)}
+                              className="px-3 py-1.5 bg-red-500/10 text-red-500 rounded-lg text-xs font-bold hover:bg-red-500/20 cursor-pointer"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* CMS SUB-TAB 2: FAQS MANAGER */}
+            {cmsTab === "faqs" && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                
+                {/* FAQ Creation Form */}
+                <div className="lg:col-span-5 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl shadow-xs space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <h3 className="font-bold text-slate-900 dark:text-white text-base">
+                      {editingFaqId ? "Edit FAQ Item" : "Create New FAQ Item"}
+                    </h3>
+                    {editingFaqId && (
+                      <button
+                        onClick={() => { setEditingFaqId(null); setFaqForm({ category: "general", question: "", answer: "" }); }}
+                        className="text-xs text-brand-500 font-bold hover:underline"
+                      >
+                        Cancel Edit
+                      </button>
+                    )}
+                  </div>
+
+                  <form onSubmit={handleFaqSubmit} className="space-y-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold uppercase text-slate-400">Category</label>
+                      <select
+                        value={faqForm.category}
+                        onChange={(e) => setFaqForm({ ...faqForm, category: e.target.value })}
+                        className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-zinc-950 px-3.5 py-2.5 text-xs focus:outline-none focus:border-brand-500"
+                      >
+                        <option value="general">General</option>
+                        <option value="setup">Menu & Setup</option>
+                        <option value="kitchen">Kitchen & Hardware</option>
+                        <option value="billing">Pricing & Billing</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold uppercase text-slate-400">Question</label>
+                      <input
+                        type="text"
+                        required
+                        value={faqForm.question}
+                        onChange={(e) => setFaqForm({ ...faqForm, question: e.target.value })}
+                        placeholder="e.g. Do diners need an app?"
+                        className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-zinc-950 px-3.5 py-2.5 text-xs focus:outline-none focus:border-brand-500"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold uppercase text-slate-400">Answer Text</label>
+                      <textarea
+                        rows={4}
+                        required
+                        value={faqForm.answer}
+                        onChange={(e) => setFaqForm({ ...faqForm, answer: e.target.value })}
+                        placeholder="Detailed answer text..."
+                        className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-zinc-950 px-3.5 py-2.5 text-xs focus:outline-none focus:border-brand-500"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full py-3 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-extrabold shadow-md active:scale-95 transition-all cursor-pointer"
+                    >
+                      {editingFaqId ? "Update FAQ" : "Save FAQ Question"}
+                    </button>
+                  </form>
+                </div>
+
+                {/* Published FAQs List */}
+                <div className="lg:col-span-7 space-y-4">
+                  <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xs space-y-4">
+                    <h3 className="font-bold text-slate-900 dark:text-white text-base">Active Help FAQs ({faqsList.length})</h3>
+                    <div className="space-y-3">
+                      {faqsList.map((faq) => (
+                        <div key={faq._id} className="p-4 rounded-2xl bg-slate-50 dark:bg-zinc-950 border border-slate-200/50 dark:border-slate-800 flex items-start justify-between gap-4">
+                          <div className="space-y-1 text-left">
+                            <span className="text-[9px] font-extrabold uppercase bg-brand-500/10 text-brand-500 px-2 py-0.5 rounded-md">
+                              {faq.category}
+                            </span>
+                            <h4 className="font-bold text-slate-900 dark:text-white text-sm">{faq.question}</h4>
+                            <p className="text-xs text-slate-400">{faq.answer}</p>
+                          </div>
+                          <div className="flex items-center gap-2 flex-none">
+                            <button
+                              onClick={() => handleEditFaq(faq)}
+                              className="px-3 py-1.5 bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold hover:bg-slate-300 cursor-pointer"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteFaq(faq._id)}
+                              className="px-3 py-1.5 bg-red-500/10 text-red-500 rounded-lg text-xs font-bold hover:bg-red-500/20 cursor-pointer"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* CMS SUB-TAB 3: PRICING PLANS MANAGER */}
+            {cmsTab === "pricing" && (
+              <div className="space-y-6 animate-fade-in text-left">
+                <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+                    <div>
+                      <h3 className="font-bold text-slate-900 dark:text-white text-lg">Website SaaS Pricing Plans Editor</h3>
+                      <p className="text-xs text-slate-400 mt-0.5">Configure monthly, quarterly, 6-month, annual rates, and QR range tiers shown on tablemenu.in/pricing.</p>
+                    </div>
+                    <button
+                      onClick={handleSavePricing}
+                      className="px-5 py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-extrabold text-xs rounded-xl shadow-md active:scale-95 transition-all cursor-pointer"
+                    >
+                      💾 Save & Publish Pricing
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {pricingList.map((plan, idx) => (
+                      <div key={plan.id || idx} className="bg-slate-50 dark:bg-zinc-950 border border-slate-200/60 dark:border-slate-800 p-5 rounded-2xl space-y-4">
+                        <div className="flex items-center justify-between border-b border-slate-200/50 dark:border-slate-800 pb-3">
+                          <span className="text-xs font-black uppercase text-brand-500">{plan.name}</span>
+                          <span className="text-[10px] font-bold bg-slate-200 dark:bg-zinc-800 px-2 py-0.5 rounded-md text-slate-400">ID: {plan.id}</span>
+                        </div>
+
+                        <div className="space-y-3">
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold uppercase text-slate-400">Plan Display Name</label>
+                            <input
+                              type="text"
+                              value={plan.name}
+                              onChange={(e) => handlePricingPlanChange(idx, "name", e.target.value)}
+                              className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-zinc-900 px-3 py-2 text-xs font-bold focus:outline-none"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold uppercase text-slate-400">QR Table Range</label>
+                            <input
+                              type="text"
+                              value={plan.qrRange || plan.details?.tables || ""}
+                              onChange={(e) => handlePricingPlanChange(idx, "qrRange", e.target.value)}
+                              className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-zinc-900 px-3 py-2 text-xs focus:outline-none"
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold uppercase text-slate-400">Monthly ($/₹)</label>
+                              <input
+                                type="number"
+                                value={plan.priceMonthly}
+                                onChange={(e) => handlePricingPlanChange(idx, "priceMonthly", Number(e.target.value))}
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-zinc-900 px-3 py-2 text-xs font-extrabold focus:outline-none text-brand-500"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold uppercase text-slate-400">Quarterly ($/₹)</label>
+                              <input
+                                type="number"
+                                value={plan.priceQuarterly}
+                                onChange={(e) => handlePricingPlanChange(idx, "priceQuarterly", Number(e.target.value))}
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-zinc-900 px-3 py-2 text-xs font-extrabold focus:outline-none"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold uppercase text-slate-400">6 Months ($/₹)</label>
+                              <input
+                                type="number"
+                                value={plan.priceHalfYearly}
+                                onChange={(e) => handlePricingPlanChange(idx, "priceHalfYearly", Number(e.target.value))}
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-zinc-900 px-3 py-2 text-xs font-extrabold focus:outline-none"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-bold uppercase text-slate-400">12 Months ($/₹)</label>
+                              <input
+                                type="number"
+                                value={plan.priceAnnual}
+                                onChange={(e) => handlePricingPlanChange(idx, "priceAnnual", Number(e.target.value))}
+                                className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-zinc-900 px-3 py-2 text-xs font-extrabold focus:outline-none text-emerald-500"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold uppercase text-slate-400">Dedicated Support Detail</label>
+                            <input
+                              type="text"
+                              value={plan.support || plan.details?.support || "1 Month Free Support"}
+                              onChange={(e) => handlePricingPlanChange(idx, "support", e.target.value)}
+                              className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-zinc-900 px-3 py-2 text-xs focus:outline-none"
+                            />
+                          </div>
+
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+          </div>
+        )}
 
       </main>
 
@@ -759,11 +1358,10 @@ export default function MasterDashboard() {
                   <label className="text-xs font-bold uppercase tracking-wider text-slate-500 block">Brand Palette Theme</label>
                   <div className="grid grid-cols-2 gap-2">
                     {[
-                      { id: "orange", label: "Warm Amber", color: "bg-orange-500" },
-                      { id: "red", label: "Sunset Red", color: "bg-red-500" },
-                      { id: "green", label: "Emerald Mint", color: "bg-emerald-500" },
-                      { id: "blue", label: "Ocean Blue", color: "bg-blue-500" },
-                      { id: "charcoal", label: "Dark Slate", color: "bg-slate-800" },
+                      { id: "orange", label: "Vibrant Sunset (Orange)", color: "bg-orange-500" },
+                      { id: "gold", label: "Royal Gold (Luxury)", color: "bg-amber-400" },
+                      { id: "velvet", label: "Dark Velvet (Midnight)", color: "bg-purple-600" },
+                      { id: "emerald", label: "Minimalist Emerald", color: "bg-emerald-500" },
                     ].map((theme) => (
                       <button
                         key={theme.id}
@@ -1002,7 +1600,7 @@ export default function MasterDashboard() {
               <div className="space-y-4">
                 <div className="flex justify-between items-start pb-3 border-b border-slate-200/60 dark:border-slate-800">
                   <div>
-                    <h4 className="text-xs font-black text-brand-500 uppercase tracking-wide">QuickBite Invoice</h4>
+                    <h4 className="text-xs font-black text-brand-500 uppercase tracking-wide">TableMenu.in Invoice</h4>
                     <p className="text-[9px] text-slate-400 font-medium">SaaS License Receipt</p>
                   </div>
                   <div className="text-right text-[10px] text-slate-400 font-mono">

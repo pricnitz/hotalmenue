@@ -1,65 +1,71 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { CheckCircleIcon } from "./Icons";
 
 export default function PricingToggle({ showMatrix = true }) {
-  const [billingCycle, setBillingCycle] = useState("annual"); // "monthly", "quarterly", or "annual"
+  const [billingCycle, setBillingCycle] = useState("annual"); // "monthly", "quarterly", "halfyearly", or "annual"
 
-  const plans = [
+  const defaultPlans = [
     {
-      name: "Starter",
-      description: "Ideal for small coffee shops and food trucks starting digital menus.",
+      id: "starter",
+      name: "Starter (1-10 QRs)",
+      description: "Ideal for small cafes and eateries needing basic QR table ordering.",
       priceMonthly: 29,
       priceQuarterly: 26,
+      priceHalfYearly: 23,
       priceAnnual: 21,
-      ctaText: "Start 14-Day Free Trial",
+      ctaText: "Start Free Trial",
       ctaLink: "/auth/register?plan=starter",
       details: {
-        tables: "Up to 10 Tables",
-        menuItems: "Up to 50 Items",
+        tables: "1 - 10 Dining Tables (QR Range)",
+        menuItems: "Up to 50 Menu Items",
+        support: "1 Month Free Dedicated Support (Tech & Non-Tech)",
+        standee: "Digital Printable QR Cards",
         staff: "3 Staff Accounts",
-        support: "Email Support (24h SLA)",
-        storage: "500 MB Cloud Storage",
       },
       popular: false,
       gradient: "from-slate-50 to-slate-100 dark:from-zinc-900 dark:to-zinc-950",
       border: "border-slate-200 dark:border-slate-800",
     },
     {
-      name: "Growth",
-      description: "Best for busy bistros and family restaurants looking to optimize workflows.",
+      id: "growth",
+      name: "Growth (11-30 QRs)",
+      description: "Best for growing bistros and family restaurants looking to scale table orders.",
       priceMonthly: 79,
       priceQuarterly: 71,
+      priceHalfYearly: 65,
       priceAnnual: 59,
-      ctaText: "Start 14-Day Free Trial",
+      ctaText: "Start Free Trial",
       ctaLink: "/auth/register?plan=growth",
       details: {
-        tables: "Up to 50 Tables",
-        menuItems: "Up to 200 Items",
+        tables: "11 - 30 Dining Tables (QR Range)",
+        menuItems: "Up to 200 Menu Items",
+        support: "1 Month Free Dedicated Support (Tech & Non-Tech)",
+        standee: "Physical QR Standee / Tent Cards Included",
         staff: "15 Staff Accounts",
-        support: "24/7 Priority Live Chat",
-        storage: "2 GB Cloud Storage",
       },
       popular: true, // Recommended Plan
       gradient: "from-brand-50 to-orange-100/50 dark:from-zinc-900 dark:to-brand-950/20",
       border: "border-brand-500",
     },
     {
-      name: "Pro Enterprise",
-      description: "Perfect for multi-outlet franchises and fine dining establishments.",
+      id: "pro",
+      name: "Pro Enterprise (31-50+ QRs)",
+      description: "Perfect for high-volume dining, fine dining, and multi-outlet chains.",
       priceMonthly: 149,
       priceQuarterly: 134,
+      priceHalfYearly: 120,
       priceAnnual: 111,
       ctaText: "Talk to Sales / Register",
       ctaLink: "/contact?type=demo",
       details: {
-        tables: "Unlimited Tables",
-        menuItems: "Unlimited Items",
-        staff: "Unlimited Staff",
-        support: "24/7 Phone & Account Mgr",
-        storage: "10 GB Cloud Storage",
+        tables: "31 - 50+ Dining Tables (QR Range)",
+        menuItems: "Unlimited Menu Items",
+        support: "1 Month Free Dedicated Support (Tech & Non-Tech)",
+        standee: "Custom Acrylic QR Standees & Branding Kit",
+        staff: "Unlimited Staff Accounts",
       },
       popular: false,
       gradient: "from-slate-50 to-slate-100 dark:from-zinc-900 dark:to-zinc-950",
@@ -67,14 +73,46 @@ export default function PricingToggle({ showMatrix = true }) {
     },
   ];
 
+  const [plans, setPlans] = useState(defaultPlans);
+
+  useEffect(() => {
+    fetchPricing();
+  }, []);
+
+  const fetchPricing = async () => {
+    try {
+      const res = await fetch("/api/pricing");
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.length > 0) {
+          setPlans(data.map((p, idx) => ({
+            ...defaultPlans[idx],
+            ...p,
+            details: p.details || {
+              tables: p.qrRange || defaultPlans[idx].details.tables,
+              menuItems: p.menuItems || defaultPlans[idx].details.menuItems,
+              support: p.support || defaultPlans[idx].details.support,
+              standee: p.standee || defaultPlans[idx].details.standee,
+              staff: defaultPlans[idx].details.staff,
+            }
+          })));
+        }
+      }
+    } catch (e) {
+      console.error("Failed to fetch live pricing:", e);
+    }
+  };
+
   const getCycleLabel = () => {
-    if (billingCycle === "annual") return "billed annually";
-    if (billingCycle === "quarterly") return "billed quarterly";
+    if (billingCycle === "annual") return "billed annually (12 Months)";
+    if (billingCycle === "halfyearly") return "billed every 6 Months";
+    if (billingCycle === "quarterly") return "billed quarterly (3 Months)";
     return "billed monthly";
   };
 
   const getCalculatedPrice = (plan) => {
     if (billingCycle === "annual") return plan.priceAnnual;
+    if (billingCycle === "halfyearly") return plan.priceHalfYearly;
     if (billingCycle === "quarterly") return plan.priceQuarterly;
     return plan.priceMonthly;
   };
@@ -125,7 +163,17 @@ export default function PricingToggle({ showMatrix = true }) {
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-slate-200"
             }`}
           >
-            Quarterly <span className="text-[9px] text-brand-600 dark:text-brand-400 font-extrabold bg-brand-50 dark:bg-brand-950/50 px-1.5 py-0.5 rounded-md ml-1">Save 10%</span>
+            Quarterly (3 Mos) <span className="text-[9px] text-brand-600 dark:text-brand-400 font-extrabold bg-brand-50 dark:bg-brand-950/50 px-1.5 py-0.5 rounded-md ml-1">Save 10%</span>
+          </button>
+          <button
+            onClick={() => setBillingCycle("halfyearly")}
+            className={`px-4 py-2 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+              billingCycle === "halfyearly"
+                ? "bg-white dark:bg-zinc-950 text-slate-900 dark:text-white shadow-xs"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-slate-200"
+            }`}
+          >
+            6 Months <span className="text-[9px] text-brand-600 dark:text-brand-400 font-extrabold bg-brand-50 dark:bg-brand-950/50 px-1.5 py-0.5 rounded-md ml-1">Save 15%</span>
           </button>
           <button
             onClick={() => setBillingCycle("annual")}
@@ -135,7 +183,7 @@ export default function PricingToggle({ showMatrix = true }) {
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-slate-200"
             }`}
           >
-            Annually <span className="text-[9px] text-brand-600 dark:text-brand-400 font-extrabold bg-brand-50 dark:bg-brand-950/50 px-1.5 py-0.5 rounded-md ml-1">Save 25%</span>
+            12 Months <span className="text-[9px] text-brand-600 dark:text-brand-400 font-extrabold bg-brand-50 dark:bg-brand-950/50 px-1.5 py-0.5 rounded-md ml-1">Save 25%</span>
           </button>
         </div>
         <p className="text-sm text-slate-500 dark:text-slate-400">

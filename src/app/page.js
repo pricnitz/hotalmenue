@@ -8,10 +8,10 @@ import FAQAccordion from "../components/FAQAccordion";
 import { QrCodeIcon, ChefHatIcon, TableIcon, ClockIcon, ChartIcon, CheckCircleIcon, ArrowRightIcon, StarIcon, SparklesIcon } from "../components/Icons";
 
 export const metadata = {
-  title: "QuickBite | Cloud Restaurant QR Menu & KDS Order Management System",
-  description: "QuickBite is a professional food-tech SaaS landing page inspired by Toast POS & PetPooja. Launch digital QR menus, manage table occupancy, optimize kitchen KDS workflows, and accept contactless payments with 0% commission.",
+  title: "TableMenu.in | Cloud Restaurant QR Menu & KDS Order Management System",
+  description: "TableMenu.in is a professional food-tech SaaS landing page. Launch digital QR menus, manage table occupancy, optimize kitchen KDS workflows, and accept contactless payments with 0% commission.",
   openGraph: {
-    title: "QuickBite | Cloud Restaurant QR Menu & Order Management",
+    title: "TableMenu.in | Cloud Restaurant QR Menu & Order Management",
     description: "Digitize your dining room. Guests scan QR, order food, and pay instantly without downloading any apps. Reduce order times by 12 mins.",
     type: "website",
   },
@@ -79,7 +79,7 @@ export default function Home() {
       name: "Chef Marco Silva",
       role: "Owner, Bella Italia Bistro",
       stats: "+24% Average Order Value",
-      quote: "QuickBite transformed our busy Friday nights. Guests order drinks immediately upon sitting, and they checkout without waiting for the waiter. Our sales increased and staff stress plummeted.",
+      quote: "TableMenu.in transformed our busy Friday nights. Guests order drinks immediately upon sitting, and they checkout without waiting for the waiter. Our sales increased and staff stress plummeted.",
       rating: 5,
     },
     {
@@ -114,7 +114,7 @@ export default function Home() {
               
               <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-6xl leading-tight">
                 Digitize your dining room with{" "}
-                <span className="gradient-text">QuickBite QR Menu</span>
+                <span className="gradient-text">TableMenu.in QR Menu</span>
               </h1>
               
               <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -158,7 +158,7 @@ export default function Home() {
                   </p>
                   <div className="flex gap-4 justify-center flex-wrap pt-2">
                     <span className="bg-slate-800/80 px-3.5 py-1.5 rounded-xl text-xs font-medium border border-slate-700/50">🟢 Live Outlet: active</span>
-                    <span className="bg-slate-800/80 px-3.5 py-1.5 rounded-xl text-xs font-medium border border-slate-700/50">📊 Today: $4,920.00</span>
+                    <span className="bg-slate-800/80 px-3.5 py-1.5 rounded-xl text-xs font-medium border border-slate-700/50">📊 Today: ₹4,920.00</span>
                     <span className="bg-slate-800/80 px-3.5 py-1.5 rounded-xl text-xs font-medium border border-slate-700/50">📋 Orders: 148 processed</span>
                   </div>
                 </div>
@@ -178,7 +178,7 @@ export default function Home() {
                 Everything you need to run a modern, efficient restaurant
               </h3>
               <p className="text-slate-500 dark:text-slate-400">
-                Say goodbye to paper menus and chaotic wait times. QuickBite connects customers directly with the kitchen.
+                Say goodbye to paper menus and chaotic wait times. TableMenu.in connects customers directly with the kitchen.
               </p>
             </div>
 
@@ -271,7 +271,7 @@ export default function Home() {
                 Loved by restaurant owners worldwide
               </h3>
               <p className="text-slate-500">
-                See how eateries of all sizes leverage QuickBite to reduce stress and boost profitability.
+                See how eateries of all sizes leverage TableMenu.in to reduce stress and boost profitability.
               </p>
             </div>
 

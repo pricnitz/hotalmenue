@@ -5,8 +5,8 @@ import DemoScheduler from "../../components/DemoScheduler";
 import { MailIcon, PhoneIcon, MapPinIcon } from "../../components/Icons";
 
 export const metadata = {
-  title: "Contact Us & Book Demo | QuickBite Restaurant SaaS",
-  description: "Get in touch with the QuickBite sales and support team. Book a 15-minute live platform demo to optimize your dining table checkout workflows.",
+  title: "Contact Us & Book Demo | TableMenu.in Restaurant SaaS",
+  description: "Get in touch with the TableMenu.in sales and support team. Book a 15-minute live platform demo to optimize your dining table checkout workflows.",
 };
 
 export default function ContactPage() {
@@ -14,7 +14,7 @@ export default function ContactPage() {
     {
       icon: <MailIcon className="w-6 h-6 text-brand-500" />,
       title: "Email Us",
-      value: "hello@quickbite.com",
+      value: "info@hotelmenu.in",
       sub: "General queries, support, integration questions",
     },
     {

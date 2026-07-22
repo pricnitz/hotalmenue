@@ -93,7 +93,7 @@ export default function DemoScheduler() {
         <form onSubmit={handleNextStep} className="space-y-5">
           <div className="text-center md:text-left space-y-1 mb-6">
             <h4 className="text-xl font-bold text-slate-900 dark:text-white">Book a 15-Min Live Demo</h4>
-            <p className="text-sm text-slate-500">Let our specialists show you how QuickBite can double your table orders.</p>
+            <p className="text-sm text-slate-500">Let our specialists show you how TableMenu.in can double your table orders.</p>
           </div>
 
           <div className="space-y-1.5 text-left">
@@ -267,7 +267,7 @@ export default function DemoScheduler() {
           <div className="space-y-2">
             <h4 className="text-2xl font-extrabold text-slate-900 dark:text-white">Demo Scheduled!</h4>
             <p className="text-sm text-slate-600 dark:text-slate-400 max-w-sm mx-auto">
-              Hi <span className="font-semibold text-slate-900 dark:text-white">{form.fullName}</span>, we are excited to showcase QuickBite to <span className="font-semibold text-slate-900 dark:text-white">{form.restaurantName}</span>.
+              Hi <span className="font-semibold text-slate-900 dark:text-white">{form.fullName}</span>, we are excited to showcase TableMenu.in to <span className="font-semibold text-slate-900 dark:text-white">{form.restaurantName}</span>.
             </p>
           </div>
 

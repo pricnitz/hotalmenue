@@ -3,8 +3,8 @@ import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 
 export const metadata = {
-  title: "Privacy Policy | QuickBite Restaurant SaaS",
-  description: "Read the Privacy Policy detailing how QuickBite collects, processes, and protects your restaurant data and customer session details.",
+  title: "Privacy Policy | TableMenu.in Restaurant SaaS",
+  description: "Read the Privacy Policy detailing how TableMenu.in collects, processes, and protects your restaurant data and customer session details.",
 };
 
 export default function PrivacyPage() {
@@ -49,7 +49,7 @@ export default function PrivacyPage() {
             </div>
 
             <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-              QuickBite ('we', 'our') values the privacy of restaurant operators and dining guests. This policy explains our data processing protocols, explaining how we store menu logs and route checkout tokens.
+              TableMenu.in ('we', 'our') values the privacy of restaurant operators and dining guests. This policy explains our data processing protocols, explaining how we store menu logs and route checkout tokens.
             </p>
 
             <div className="space-y-6">
@@ -67,8 +67,8 @@ export default function PrivacyPage() {
 
             <div className="pt-6 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-400 text-center">
               If you have queries regarding data deletion or gdpr compliance, contact us at{" "}
-              <a href="mailto:privacy@quickbite.com" className="text-brand-500 hover:underline">
-                privacy@quickbite.com
+              <a href="mailto:privacy@tablemenu.in" className="text-brand-500 hover:underline">
+                privacy@tablemenu.in
               </a>
               .
             </div>

@@ -31,7 +31,7 @@ export default function Header() {
                 <QrCodeIcon className="h-6 w-6" />
               </div>
               <span className="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
-                QuickBite<span className="text-brand-500 font-extrabold">.</span>
+                tablemenu<span className="text-brand-500 font-extrabold">.in</span>
               </span>
             </Link>
           </div>

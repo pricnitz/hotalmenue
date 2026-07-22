@@ -55,7 +55,7 @@ export async function POST(request) {
     }
 
     // 3. Fallback for Static Demo Accounts
-    if (lowerEmail === "master@quickbite.com" && pw === "password") {
+    if ((lowerEmail === "master@tablemenu.in" || lowerEmail === "master@quickbite.com") && pw === "password") {
       return NextResponse.json({ role: "master", redirect: "/dashboard/master" }, { status: 200 });
     }
     if (lowerEmail === "owner@cafe.com" && pw === "password") {

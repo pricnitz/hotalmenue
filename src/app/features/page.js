@@ -6,7 +6,7 @@ import { QrCodeIcon, ChefHatIcon, TableIcon, ClockIcon, ChartIcon, SparklesIcon,
 
 export const metadata = {
   title: "Features | Cloud Restaurant QR Ordering Platform",
-  description: "Explore the comprehensive features of QuickBite: QR Menus, Live Table Management, contactless payments, web-based KDS, and robust back-office analytics.",
+  description: "Explore the comprehensive features of TableMenu.in: QR Menus, Live Table Management, contactless payments, web-based KDS, and robust back-office analytics.",
 };
 
 export default function FeaturesPage() {
@@ -130,7 +130,7 @@ export default function FeaturesPage() {
                       <span className="text-[10px] font-bold uppercase tracking-wider bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 px-3 py-1 rounded-full">
                         {feat.tag}
                       </span>
-                      <span className="text-xs text-slate-400 font-semibold">QuickBite POS Module</span>
+                      <span className="text-xs text-slate-400 font-semibold">TableMenu.in POS Module</span>
                     </div>
                     
                     <div className="relative z-10 flex flex-col items-center justify-center py-6 text-slate-400">

@@ -7,22 +7,22 @@ import { CheckCircleIcon } from "../../components/Icons";
 
 export const metadata = {
   title: "Pricing | Affordable Plans for QR Menus & Ordering",
-  description: "View QuickBite pricing plans. Starter, Growth, and Pro Enterprise tiers. Free 14-day trial, annual discounts, and direct payment integrations.",
+  description: "View TableMenu.in pricing plans. Starter, Growth, and Pro Enterprise tiers. Free 14-day trial, annual discounts, and direct payment integrations.",
 };
 
 export default function PricingPage() {
   const billingFaqs = [
     {
       q: "Are there any setup fees or hidden installation costs?",
-      a: "No. QuickBite is fully cloud-based. There are zero installation fees, hardware setup fees, or hidden charges. You can activate your account and start using it immediately on your own devices.",
+      a: "No. TableMenu.in is fully cloud-based. There are zero installation fees, hardware setup fees, or hidden charges. You can activate your account and start using it immediately on your own devices.",
     },
     {
       q: "Can I upgrade or downgrade my tier at any time?",
       a: "Yes. You can switch plans from your billing portal at any point. Upgrades take effect instantly with pro-rated billing, while downgrades apply at the start of your next billing cycle.",
     },
     {
-      q: "Do I have to pay transaction fees to QuickBite on table sales?",
-      a: "No. Unlike other platforms that take a 1% to 3% cut of your orders, QuickBite charges a flat SaaS fee. You keep 100% of your revenue, paying only standard credit card processing fees directly to Stripe/UPI.",
+      q: "Do I have to pay transaction fees to TableMenu.in on table sales?",
+      a: "No. Unlike other platforms that take a 1% to 3% cut of your orders, TableMenu.in charges a flat SaaS fee. You keep 100% of your revenue, paying only standard credit card processing fees directly to Stripe/UPI.",
     },
     {
       q: "What payment gateways are supported?",

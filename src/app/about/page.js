@@ -5,8 +5,8 @@ import Footer from "../../components/Footer";
 import { SparklesIcon, CheckCircleIcon, UsersIcon, ShieldCheckIcon, UtensilsIcon } from "../../components/Icons";
 
 export const metadata = {
-  title: "About Us | QuickBite Restaurant Solutions",
-  description: "Learn about the mission, values, and team behind QuickBite—the leading cloud-based QR menu and kitchen display operating system for modern restaurants.",
+  title: "About Us | TableMenu.in Restaurant Solutions",
+  description: "Learn about the mission, values, and team behind TableMenu.in—the leading cloud-based QR menu and kitchen display operating system for modern restaurants.",
 };
 
 export default function About() {
@@ -55,7 +55,7 @@ export default function About() {
               Our Journey
             </div>
             <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-5xl">
-              About QuickBite
+              About TableMenu.in
             </h1>
             <p className="text-lg text-slate-500 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
               We build technology that helps restaurants eliminate wait times, streamline kitchen operations, and keep diners coming back.
@@ -72,7 +72,7 @@ export default function About() {
                   Our Mission: Bring digital agility to dining rooms
                 </h2>
                 <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                  QuickBite was born out of frustration. Our founders, veterans of the restaurant POS and delivery aggregator spaces, noticed that while food delivery had digitised rapidly, the dine-in experience remained stuck in the past.
+                  TableMenu.in was born out of frustration. Our founders, veterans of the restaurant POS and delivery aggregator spaces, noticed that while food delivery had digitised rapidly, the dine-in experience remained stuck in the past.
                 </p>
                 <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
                   We set out to create a cloud-based system that allows customers to scan, order, and pay instantly, while connecting them directly to the kitchen display screen. Today, we process millions of orders annually, saving waiters steps and saving owners thousands of dollars in print costs and labor optimization.

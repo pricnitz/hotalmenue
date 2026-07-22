@@ -3,8 +3,8 @@ import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 
 export const metadata = {
-  title: "Terms & Conditions | QuickBite POS Solutions",
-  description: "Read the Terms and Conditions governing the use of the QuickBite restaurant management SaaS platform.",
+  title: "Terms & Conditions | TableMenu.in POS Solutions",
+  description: "Read the Terms and Conditions governing the use of the TableMenu.in restaurant management SaaS platform.",
 };
 
 export default function TermsPage() {
@@ -19,7 +19,7 @@ export default function TermsPage() {
     },
     {
       title: "3. Service Description & Commission-Free Guarantee",
-      content: "QuickBite provides restaurant software as a service (SaaS). We guarantee that we do not take any percentage-based commissions on transactions processed through your connected payment gateways (e.g. Stripe, PayPal). You are responsible for all fees charged by your merchant processor directly.",
+      content: "TableMenu.in provides restaurant software as a service (SaaS). We guarantee that we do not take any percentage-based commissions on transactions processed through your connected payment gateways (e.g. Stripe, PayPal). You are responsible for all fees charged by your merchant processor directly.",
     },
     {
       title: "4. Billing, Subscriptions & Cancellations",
@@ -27,11 +27,11 @@ export default function TermsPage() {
     },
     {
       title: "5. Customer Data & Content Ownership",
-      content: "You retain all intellectual property rights in the menus, branding logos, and dishes catalog uploaded to our service. You grant QuickBite a worldwide, non-exclusive license to host and display your content to your restaurant customers via QR code lookups.",
+      content: "You retain all intellectual property rights in the menus, branding logos, and dishes catalog uploaded to our service. You grant TableMenu.in a worldwide, non-exclusive license to host and display your content to your restaurant customers via QR code lookups.",
     },
     {
       title: "6. Limitation of Liability",
-      content: "To the maximum extent permitted by law, QuickBite shall not be liable for any indirect, incidental, special, or consequential damages, including loss of profits, revenue, data, or dining guest feedback arising out of or in connection with your use of the service.",
+      content: "To the maximum extent permitted by law, TableMenu.in shall not be liable for any indirect, incidental, special, or consequential damages, including loss of profits, revenue, data, or dining guest feedback arising out of or in connection with your use of the service.",
     },
   ];
 
@@ -71,8 +71,8 @@ export default function TermsPage() {
 
             <div className="pt-6 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-400 text-center">
               If you have any questions regarding these Terms, contact us at{" "}
-              <a href="mailto:legal@quickbite.com" className="text-brand-500 hover:underline">
-                legal@quickbite.com
+              <a href="mailto:legal@tablemenu.in" className="text-brand-500 hover:underline">
+                legal@tablemenu.in
               </a>
               .
             </div>

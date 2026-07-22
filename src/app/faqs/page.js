@@ -6,7 +6,7 @@ import FAQAccordion from "../../components/FAQAccordion";
 
 export const metadata = {
   title: "FAQs | Help Center & Support Q&A",
-  description: "Browse the QuickBite help center. Get answers about QR menu setup, contactless payments, KDS devices, waiter summon buttons, and pricing.",
+  description: "Browse the TableMenu.in help center. Get answers about QR menu setup, contactless payments, KDS devices, waiter summon buttons, and pricing.",
 };
 
 export default function FAQsPage() {
@@ -53,10 +53,10 @@ export default function FAQsPage() {
                 Submit a Support Ticket
               </Link>
               <a
-                href="mailto:support@quickbite.com"
+                href="mailto:support@tablemenu.in"
                 className="inline-flex items-center justify-center rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-200 px-6 py-3 text-sm font-bold shadow-sm hover:bg-slate-50 dark:hover:bg-zinc-800 transition-all"
               >
-                Email support@quickbite.com
+                Email support@tablemenu.in
               </a>
             </div>
           </div>
