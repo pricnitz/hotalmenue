@@ -7,13 +7,124 @@ import PricingToggle from "../components/PricingToggle";
 import FAQAccordion from "../components/FAQAccordion";
 import { QrCodeIcon, ChefHatIcon, TableIcon, ClockIcon, ChartIcon, CheckCircleIcon, ArrowRightIcon, StarIcon, SparklesIcon } from "../components/Icons";
 
+const siteUrl = "https://tablemenu.in";
+
 export const metadata = {
-  title: "TableMenu.in | Cloud Restaurant QR Menu & KDS Order Management System",
-  description: "TableMenu.in is a professional food-tech SaaS landing page. Launch digital QR menus, manage table occupancy, optimize kitchen KDS workflows, and accept contactless payments with 0% commission.",
+  metadataBase: new URL(siteUrl),
+
+  title: {
+    default: "TableMenu.in | Smart Restaurant QR Menu & Order Management Platform",
+    template: "%s | TableMenu.in",
+  },
+
+  description:
+    "TableMenu.in is a cloud-based restaurant management platform that helps restaurants, cafes, hotels, cloud kitchens, and food courts manage QR menus, table ordering, kitchen operations, staff, billing, and business analytics from one dashboard.",
+
+  keywords: [
+    "Restaurant Management Software",
+    "QR Menu",
+    "Digital Menu",
+    "Restaurant Ordering System",
+    "Restaurant ERP",
+    "Kitchen Display System",
+    "KDS",
+    "Table Ordering",
+    "Cloud Restaurant Software",
+    "Cafe Management Software",
+    "Hotel Restaurant Software",
+    "Restaurant Billing Software",
+    "Waiter Ordering App",
+    "Restaurant Dashboard",
+    "Restaurant Analytics",
+    "Restaurant SaaS",
+    "Menu QR Code",
+    "Contactless Menu",
+    "Restaurant Technology",
+    "Food Ordering Platform",
+  ],
+
+  authors: [
+    {
+      name: "TableMenu.in",
+      url: siteUrl,
+    },
+  ],
+
+  creator: "TableMenu.in",
+
+  publisher: "TableMenu.in",
+
+  applicationName: "TableMenu.in",
+
+  category: "Restaurant Management",
+
+  alternates: {
+    canonical: siteUrl,
+  },
+
+  robots: {
+    index: true,
+    follow: true,
+    nocache: false,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-video-preview": -1,
+      "max-snippet": -1,
+    },
+  },
+
   openGraph: {
-    title: "TableMenu.in | Cloud Restaurant QR Menu & Order Management",
-    description: "Digitize your dining room. Guests scan QR, order food, and pay instantly without downloading any apps. Reduce order times by 12 mins.",
     type: "website",
+    url: siteUrl,
+    siteName: "TableMenu.in",
+    locale: "en_IN",
+
+    title:
+      "TableMenu.in | Smart Restaurant QR Menu & Order Management Platform",
+
+    description:
+      "Modern restaurant software for QR menus, table ordering, kitchen workflow, staff management, billing, analytics, and multi-location restaurant operations.",
+
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "TableMenu Restaurant Management Platform",
+      },
+    ],
+  },
+
+  twitter: {
+    card: "summary_large_image",
+
+    title:
+      "TableMenu.in | Restaurant QR Menu & Order Management Platform",
+
+    description:
+      "Cloud-based restaurant software for QR menus, digital ordering, kitchen management, billing, and analytics.",
+
+    images: ["/og-image.jpg"],
+  },
+
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
+
+  manifest: "/manifest.json",
+
+  verification: {
+    google: "YOUR_GOOGLE_VERIFICATION_CODE",
+  },
+
+  other: {
+    "theme-color": "#0F172A",
+    "apple-mobile-web-app-capable": "yes",
+    "mobile-web-app-capable": "yes",
   },
 };
 
@@ -96,7 +207,7 @@ export default function Home() {
       <Header />
 
       <main className="flex-grow">
-        
+
         {/* HERO SECTION */}
         <section className="relative overflow-hidden bg-slate-50 dark:bg-zinc-950 pt-16 pb-20 lg:pt-24 lg:pb-28">
           <div className="absolute inset-0 z-0 opacity-30 dark:opacity-10 pointer-events-none">
@@ -111,12 +222,12 @@ export default function Home() {
                   The Restaurant Operating System of the Future
                 </span>
               </div>
-              
+
               <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-6xl leading-tight">
                 Digitize your dining room with{" "}
                 <span className="gradient-text">TableMenu.in QR Menu</span>
               </h1>
-              
+
               <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-300 leading-relaxed">
                 Guests scan, order, and pay directly from their table. No app install required. Streamline kitchen workflows, reduce wait times, and increase orders by 22%.
               </p>
@@ -143,7 +254,7 @@ export default function Home() {
                 <span className="flex items-center gap-1.5"><CheckCircleIcon className="w-4 h-4 text-emerald-500" /> 0% Commission Gateways</span>
               </div>
             </div>
-            
+
             {/* Dashboard Hero Graphic mockup container */}
             <div className="mt-16 relative rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-zinc-900 shadow-2xl p-2 sm:p-4 max-w-5xl mx-auto">
               <div className="rounded-2xl overflow-hidden aspect-[16/9] relative bg-slate-900 flex items-center justify-center text-white">
@@ -255,7 +366,7 @@ export default function Home() {
                 Use the live simulator below to experience how easily a diner places an order and how KDS confirms it instantly.
               </p>
             </div>
-            
+
             <QRMenuSimulator />
           </div>
         </section>
@@ -319,7 +430,7 @@ export default function Home() {
             </div>
 
             <PricingToggle showMatrix={false} />
-            
+
             <div className="mt-12 text-center">
               <Link
                 href="/pricing"
