@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { QrCodeIcon, StarIcon, ClockIcon, ChefHatIcon, CheckCircleIcon, SparklesIcon } from "../../../../components/Icons";
+import { useSocket } from "../../../../lib/useSocket";
 
 export default function TableMenuPage() {
   const params = useParams();
@@ -86,6 +87,13 @@ export default function TableMenuPage() {
       fetchData();
     }
   }, [restaurantId]);
+
+  // Realtime Socket.IO subscription
+  useSocket(restaurantId, (data) => {
+    if (data && data.type === "UPDATE" && submittedOrder && (data.id === submittedOrder._id || data.id === submittedOrder._id?.toString())) {
+      setSubmittedOrder((prev) => (prev ? { ...prev, ...data.updateData } : prev));
+    }
+  });
 
   const addToCart = (item) => {
     setCart((prev) => {

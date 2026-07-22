@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { QrCodeIcon, ChefHatIcon, TableIcon, ClockIcon, ChartIcon, CheckCircleIcon, XIcon, SparklesIcon } from "../../../components/Icons";
+import { useSocket } from "../../../lib/useSocket";
 
 export default function WaiterDashboard() {
   const router = useRouter();
@@ -14,6 +15,7 @@ export default function WaiterDashboard() {
   // Ready Notification State
   const [notifiedReady, setNotifiedReady] = useState({}); // { [orderId]: true }
   const [restaurantProfile, setRestaurantProfile] = useState(null);
+  const [restaurantId, setRestaurantId] = useState("");
 
   const getCurrencySymbol = () => {
     const code = restaurantProfile?.currency || "INR";
@@ -47,6 +49,9 @@ export default function WaiterDashboard() {
   const fetchOrders = async () => {
     try {
       const restId = localStorage.getItem("restaurantId") || "";
+      if (restId !== restaurantId) {
+        setRestaurantId(restId);
+      }
       const res = await fetch(`/api/orders?restaurantId=${restId}`);
       if (res.ok) {
         const data = await res.json();
@@ -168,14 +173,19 @@ export default function WaiterDashboard() {
     }
   };
 
+  // Realtime Socket.IO subscription
+  useSocket(restaurantId, () => {
+    fetchOrders();
+  });
+
   useEffect(() => {
     setIsMounted(true);
     fetchRestaurantProfile();
     fetchOrders();
     fetchMenu();
     fetchCategories();
-    // Poll orders database every 4 seconds
-    const interval = setInterval(fetchOrders, 4000);
+    // Poll orders database every 5 seconds as fallback
+    const interval = setInterval(fetchOrders, 5000);
     return () => clearInterval(interval);
   }, [notifiedReady]);
 

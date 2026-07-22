@@ -40,13 +40,27 @@ export async function PUT(request, { params }) {
       query = { _id: id };
     }
 
+    const existingOrder = await collection.findOne(query);
     const result = await collection.updateOne(query, { $set: updateData });
 
     if (result.matchedCount === 0) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, status }, { status: 200 });
+    // Emit Socket.IO realtime order status update event
+    try {
+      if (global.io) {
+        const restId = (existingOrder && existingOrder.restaurantId) || body.restaurantId || "";
+        if (restId) {
+          global.io.to(`restaurant_${restId}`).emit("order-changed", { type: "UPDATE", id, updateData, restaurantId: restId });
+        }
+        global.io.emit("order-changed", { type: "UPDATE", id, updateData, restaurantId: restId });
+      }
+    } catch (e) {
+      console.error("Socket.IO emit error on PUT /api/orders/[id]:", e);
+    }
+
+    return NextResponse.json({ success: true, status: body.status }, { status: 200 });
   } catch (error) {
     console.error("PUT Order Error:", error);
     return NextResponse.json({ error: "Failed to update order status" }, { status: 500 });
@@ -69,10 +83,24 @@ export async function DELETE(request, { params }) {
       query = { _id: id };
     }
 
+    const existingOrder = await collection.findOne(query);
     const result = await collection.deleteOne(query);
 
     if (result.deletedCount === 0) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
+    // Emit Socket.IO realtime order deletion event
+    try {
+      if (global.io) {
+        const restId = (existingOrder && existingOrder.restaurantId) || "";
+        if (restId) {
+          global.io.to(`restaurant_${restId}`).emit("order-changed", { type: "DELETE", id, restaurantId: restId });
+        }
+        global.io.emit("order-changed", { type: "DELETE", id, restaurantId: restId });
+      }
+    } catch (e) {
+      console.error("Socket.IO emit error on DELETE /api/orders/[id]:", e);
     }
 
     return NextResponse.json({ success: true, message: "Order cleared" }, { status: 200 });

@@ -50,6 +50,19 @@ export async function POST(request) {
     const result = await collection.insertOne(newOrder);
     const saved = { ...newOrder, _id: result.insertedId };
 
+    // Emit Socket.IO realtime order event
+    try {
+      if (global.io) {
+        const roomName = restaurantId ? `restaurant_${restaurantId}` : null;
+        if (roomName) {
+          global.io.to(roomName).emit("order-changed", { type: "CREATE", order: saved, restaurantId });
+        }
+        global.io.emit("order-changed", { type: "CREATE", order: saved, restaurantId });
+      }
+    } catch (e) {
+      console.error("Socket.IO emit error on POST /api/orders:", e);
+    }
+
     return NextResponse.json(saved, { status: 201 });
   } catch (error) {
     console.error("POST Orders Error:", error);

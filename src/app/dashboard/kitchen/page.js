@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ChefHatIcon, ClockIcon, CheckCircleIcon, XIcon, SparklesIcon } from "../../../components/Icons";
+import { useSocket } from "../../../lib/useSocket";
 
 export default function KitchenDashboard() {
   const router = useRouter();
@@ -12,12 +13,17 @@ export default function KitchenDashboard() {
   const [isMounted, setIsMounted] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
 
+  const [restaurantId, setRestaurantId] = useState("");
+
   // Local state to track checked menu item rows per order (so chefs can tap-strike items they've prepared)
   const [checkedItems, setCheckedItems] = useState({}); // { [orderId_itemIndex]: true }
 
   const fetchOrders = async () => {
     try {
       const restId = localStorage.getItem("restaurantId") || "";
+      if (restId !== restaurantId) {
+        setRestaurantId(restId);
+      }
       const res = await fetch(`/api/orders?restaurantId=${restId}`);
       if (res.ok) {
         const data = await res.json();
@@ -30,11 +36,16 @@ export default function KitchenDashboard() {
     }
   };
 
+  // Socket.IO real-time subscription
+  useSocket(restaurantId, () => {
+    fetchOrders();
+  });
+
   useEffect(() => {
     setIsMounted(true);
     fetchOrders();
-    // Poll orders database every 4 seconds
-    const interval = setInterval(fetchOrders, 4000);
+    // Poll orders database every 5 seconds as fallback
+    const interval = setInterval(fetchOrders, 5000);
     return () => clearInterval(interval);
   }, []);
 

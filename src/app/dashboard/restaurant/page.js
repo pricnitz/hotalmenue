@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import QRCode from "qrcode";
 import { QrCodeIcon, ChefHatIcon, TableIcon, ClockIcon, ChartIcon, CheckCircleIcon, SparklesIcon, MailIcon, PhoneIcon, MapPinIcon } from "../../../components/Icons";
+import { useSocket } from "../../../lib/useSocket";
 
 const QRCodeImage = ({ value }) => {
   const [src, setSrc] = useState("");
@@ -295,6 +296,12 @@ export default function RestaurantDashboard() {
     // Auto-generate tables on initial load with live origin
     generateTablesList(20, origin);
   }, []);
+
+  // Realtime Socket.IO subscription
+  const currentRestId = typeof window !== "undefined" ? localStorage.getItem("restaurantId") || "" : "";
+  useSocket(currentRestId, () => {
+    fetchDbData();
+  });
 
   // Poll database for orders in the background every 5 seconds
   useEffect(() => {
