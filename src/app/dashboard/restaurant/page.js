@@ -61,8 +61,9 @@ export default function RestaurantDashboard() {
   const [loadingDb, setLoadingDb] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
 
-  // Table QR codes count state
+  // Table QR codes count and live domain state
   const [tableCount, setTableCount] = useState(20);
+  const [customBaseUrl, setCustomBaseUrl] = useState("");
   const [generatedTables, setGeneratedTables] = useState([]);
 
   // Change Password State
@@ -83,10 +84,15 @@ export default function RestaurantDashboard() {
 
   // New Category Form State
   const [categoryName, setCategoryName] = useState("");
+  const [categorySvg, setCategorySvg] = useState("");
 
   // Editing Category State
   const [editingCategory, setEditingCategory] = useState(null);
   const [editCategoryName, setEditCategoryName] = useState("");
+  const [editCategorySvg, setEditCategorySvg] = useState("");
+
+  // Category Filter for Active Menu Items
+  const [selectedDashboardCategory, setSelectedDashboardCategory] = useState("All");
 
   // Editing Menu Item State
   const [editingMenuItem, setEditingMenuItem] = useState(null);
@@ -284,8 +290,10 @@ export default function RestaurantDashboard() {
     fetchRestaurantProfile();
     fetchDbData();
     fetchStaff();
-    // Auto-generate tables on initial load
-    generateTablesList(20);
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    setCustomBaseUrl(origin);
+    // Auto-generate tables on initial load with live origin
+    generateTablesList(20, origin);
   }, []);
 
   // Poll database for orders in the background every 5 seconds
@@ -312,15 +320,30 @@ export default function RestaurantDashboard() {
     }, 1200);
   };
 
+  const getEffectiveBaseUrl = () => {
+    if (customBaseUrl && customBaseUrl.trim() !== "") {
+      return customBaseUrl.trim().replace(/\/+$/, "");
+    }
+    if (typeof window !== "undefined") {
+      return window.location.origin;
+    }
+    return "";
+  };
+
   // Generate Table URLs and session metadata
-  const generateTablesList = (count) => {
+  const generateTablesList = (count, overrideBaseUrl) => {
     const restId = localStorage.getItem("restaurantId") || "demo";
+    const base = overrideBaseUrl !== undefined ? overrideBaseUrl : getEffectiveBaseUrl();
+    const cleanBase = base ? base.trim().replace(/\/+$/, "") : "";
     const tList = [];
     for (let i = 1; i <= count; i++) {
+      const path = `/table/${restId}/T${i}`;
+      const fullUrl = cleanBase ? `${cleanBase}${path}` : (typeof window !== "undefined" ? `${window.location.origin}${path}` : path);
       tList.push({
         id: `T${i}`,
         name: `Table ${i}`,
-        url: `/table/${restId}/T${i}`,
+        path: path,
+        url: fullUrl,
       });
     }
     setGeneratedTables(tList);
@@ -330,6 +353,21 @@ export default function RestaurantDashboard() {
     e.preventDefault();
     const count = parseInt(tableCount) || 1;
     generateTablesList(count);
+  };
+
+  const handleCopyTableUrl = (url, tableName) => {
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(url);
+      alert(`Copied full QR link for ${tableName}:\n${url}`);
+    } else {
+      const textArea = document.createElement("textarea");
+      textArea.value = url;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textArea);
+      alert(`Copied full QR link for ${tableName}:\n${url}`);
+    }
   };
 
   // Serve ticket: Cooking -> Ready to Serve -> Served
@@ -359,6 +397,19 @@ export default function RestaurantDashboard() {
     }
   };
 
+  const handleSvgUpload = (file, callback) => {
+    if (!file) return;
+    if (file.size > 1024 * 1024) {
+      alert("File size must be less than 1 MB!");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      callback(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
   // Create Category
   const handleCreateCategory = async (e) => {
     e.preventDefault();
@@ -368,10 +419,11 @@ export default function RestaurantDashboard() {
       const res = await fetch("/api/categories", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: categoryName, restaurantId: restId })
+        body: JSON.stringify({ name: categoryName, svg: categorySvg, restaurantId: restId })
       });
       if (res.ok) {
         setCategoryName("");
+        setCategorySvg("");
         fetchDbData();
       } else {
         const err = await res.json();
@@ -475,11 +527,12 @@ export default function RestaurantDashboard() {
       const res = await fetch(`/api/categories/${editingCategory._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: editCategoryName })
+        body: JSON.stringify({ name: editCategoryName, svg: editCategorySvg })
       });
       if (res.ok) {
         setEditingCategory(null);
         setEditCategoryName("");
+        setEditCategorySvg("");
         fetchDbData();
       } else {
         const err = await res.json();
@@ -920,58 +973,118 @@ export default function RestaurantDashboard() {
                     <h3 className="font-bold text-sm text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">
                       1. Create Menu Categories
                     </h3>
-                    <form onSubmit={handleCreateCategory} className="flex gap-2">
-                      <input
-                        type="text"
-                        required
-                        value={categoryName}
-                        onChange={(e) => setCategoryName(e.target.value)}
-                        className="flex-grow rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-zinc-950 px-3 py-2 text-xs focus:border-brand-500 focus:outline-none"
-                        placeholder="e.g. Appetizers"
-                      />
-                      <button
-                        type="submit"
-                        className={`rounded-xl px-4 py-2 text-xs font-bold text-white shadow-xs hover:opacity-90 cursor-pointer ${themeButton[profile.themeColor]}`}
-                      >
-                        Add
-                      </button>
+                    <form onSubmit={handleCreateCategory} className="space-y-2">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          required
+                          value={categoryName}
+                          onChange={(e) => setCategoryName(e.target.value)}
+                          className="flex-grow rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-zinc-950 px-3 py-2 text-xs focus:border-brand-500 focus:outline-none"
+                          placeholder="e.g. Appetizers"
+                        />
+                        <button
+                          type="submit"
+                          className={`rounded-xl px-4 py-2 text-xs font-bold text-white shadow-xs hover:opacity-90 cursor-pointer ${themeButton[profile.themeColor]}`}
+                        >
+                          Add
+                        </button>
+                      </div>
+
+                      {/* SVG Picture Upload */}
+                      <div className="space-y-1 pt-1">
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Category SVG / Icon (Optional)</label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="file"
+                            accept=".svg,image/svg+xml,image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                handleSvgUpload(file, (base64) => setCategorySvg(base64));
+                              }
+                            }}
+                            className="block w-full text-[10px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 dark:file:bg-zinc-800 dark:file:text-slate-350 cursor-pointer"
+                          />
+                          {categorySvg && (
+                            <div className="relative flex-none">
+                              <img src={categorySvg} alt="SVG Preview" className="w-7 h-7 rounded-lg object-contain border border-slate-200 dark:border-slate-800 p-0.5" />
+                              <button
+                                type="button"
+                                onClick={() => setCategorySvg("")}
+                                className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-3.5 h-3.5 text-[8px] flex items-center justify-center font-bold"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </form>
                     <div className="space-y-2 pt-2 border-t border-slate-150 dark:border-slate-800">
                       <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Manage Categories</label>
-                      <div className="flex flex-col gap-2 max-h-[160px] overflow-y-auto pr-1 no-scrollbar text-xs">
+                      <div className="flex flex-col gap-2 max-h-[180px] overflow-y-auto pr-1 no-scrollbar text-xs">
                         {categories.map((cat) => (
                           <div key={cat._id} className="flex items-center justify-between bg-slate-50 dark:bg-zinc-950 p-2 rounded-xl border border-slate-150 dark:border-slate-850">
                             {editingCategory && editingCategory._id === cat._id ? (
-                              <form onSubmit={handleUpdateCategory} className="flex items-center gap-1 w-full">
-                                <input
-                                  type="text"
-                                  required
-                                  value={editCategoryName}
-                                  onChange={(e) => setEditCategoryName(e.target.value)}
-                                  className="flex-grow rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-zinc-900 px-2 py-1 text-[11px] focus:outline-none text-slate-800 dark:text-slate-200"
-                                />
-                                <button
-                                  type="submit"
-                                  className="px-2 py-1 bg-emerald-500 text-white rounded-lg font-bold text-[10px] cursor-pointer"
-                                >
-                                  S
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setEditingCategory(null)}
-                                  className="px-2 py-1 bg-slate-200 dark:bg-zinc-850 text-slate-600 dark:text-slate-400 rounded-lg font-bold text-[10px] cursor-pointer"
-                                >
-                                  C
-                                </button>
+                              <form onSubmit={handleUpdateCategory} className="flex flex-col gap-2 w-full p-1 bg-white dark:bg-zinc-900 rounded-lg">
+                                <div className="flex items-center gap-1 w-full">
+                                  <input
+                                    type="text"
+                                    required
+                                    value={editCategoryName}
+                                    onChange={(e) => setEditCategoryName(e.target.value)}
+                                    className="flex-grow rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-zinc-950 px-2 py-1 text-[11px] focus:outline-none text-slate-800 dark:text-slate-200"
+                                  />
+                                  <button
+                                    type="submit"
+                                    className="px-2 py-1 bg-emerald-500 text-white rounded-lg font-bold text-[10px] cursor-pointer"
+                                    title="Save"
+                                  >
+                                    ✓
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingCategory(null)}
+                                    className="px-2 py-1 bg-slate-200 dark:bg-zinc-850 text-slate-600 dark:text-slate-400 rounded-lg font-bold text-[10px] cursor-pointer"
+                                    title="Cancel"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="file"
+                                    accept=".svg,image/svg+xml,image/*"
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        handleSvgUpload(file, (base64) => setEditCategorySvg(base64));
+                                      }
+                                    }}
+                                    className="block w-full text-[9px] text-slate-500 file:mr-1 file:py-0.5 file:px-1.5 file:rounded file:border-0 file:text-[8px] file:font-bold file:bg-slate-100 file:text-slate-700 dark:file:bg-zinc-800 dark:file:text-slate-350 cursor-pointer"
+                                  />
+                                  {editCategorySvg && (
+                                    <img src={editCategorySvg} alt="" className="w-5 h-5 object-contain flex-none border rounded p-0.5" />
+                                  )}
+                                </div>
                               </form>
                             ) : (
                               <>
-                                <span className="font-extrabold text-slate-700 dark:text-slate-300 uppercase text-[10px]">{cat.name}</span>
-                                <div className="flex gap-2">
+                                <div className="flex items-center gap-2 overflow-hidden">
+                                  {cat.svg ? (
+                                    <img src={cat.svg} alt="" className="w-5 h-5 object-contain flex-none border border-slate-200 dark:border-slate-800 rounded p-0.5" />
+                                  ) : (
+                                    <span className="text-[11px] flex-none">📁</span>
+                                  )}
+                                  <span className="font-extrabold text-slate-700 dark:text-slate-300 uppercase text-[10px] truncate">{cat.name}</span>
+                                </div>
+                                <div className="flex gap-2 flex-none">
                                   <button
                                     onClick={() => {
                                       setEditingCategory(cat);
                                       setEditCategoryName(cat.name);
+                                      setEditCategorySvg(cat.svg || "");
                                     }}
                                     className="text-slate-400 hover:text-brand-500 font-bold cursor-pointer text-[10px]"
                                     title="Edit Category"
@@ -1121,13 +1234,48 @@ export default function RestaurantDashboard() {
 
                 {/* Right side items list */}
                 <div className="lg:col-span-6 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xs flex flex-col">
-                  <div className="pb-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white">Active Digital Menu Items</h3>
-                    <span className="text-xs text-slate-400 font-semibold">{totalMenuItems} dishes online</span>
+                  <div className="pb-4 border-b border-slate-100 dark:border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-base font-bold text-slate-900 dark:text-white">Active Digital Menu Items</h3>
+                      <span className="text-xs text-slate-400 font-semibold">{totalMenuItems} dishes online</span>
+                    </div>
+
+                    {/* Dashboard Category Filter Pills */}
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedDashboardCategory("All")}
+                        className={`px-3 py-1 rounded-full text-[10px] font-extrabold whitespace-nowrap transition-all cursor-pointer ${
+                          selectedDashboardCategory === "All"
+                            ? "bg-brand-500 text-white"
+                            : "bg-slate-100 dark:bg-zinc-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-zinc-700"
+                        }`}
+                      >
+                        All ({totalMenuItems})
+                      </button>
+                      {categories.map((cat) => (
+                        <button
+                          key={cat._id}
+                          type="button"
+                          onClick={() => setSelectedDashboardCategory(cat.name)}
+                          className={`px-3 py-1 rounded-full text-[10px] font-extrabold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+                            selectedDashboardCategory.trim().toLowerCase() === cat.name.trim().toLowerCase()
+                              ? "bg-brand-500 text-white"
+                              : "bg-slate-100 dark:bg-zinc-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-zinc-700"
+                          }`}
+                        >
+                          {cat.svg && <img src={cat.svg} alt="" className="w-3 h-3 object-contain flex-none" />}
+                          <span>{cat.name}</span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   <div className="overflow-y-auto space-y-4 max-h-[500px] pr-2 pt-4 no-scrollbar">
-                    {menuItems.map((item) => (
+                    {menuItems.filter((item) => {
+                      if (selectedDashboardCategory === "All") return true;
+                      return item.category && item.category.trim().toLowerCase() === selectedDashboardCategory.trim().toLowerCase();
+                    }).map((item) => (
                       <div key={item._id} className="p-4 bg-slate-50 dark:bg-zinc-950 border border-slate-200/50 dark:border-slate-800 rounded-2xl flex items-center justify-between gap-4">
 
                         {/* Optional thumbnail preview */}
@@ -1359,9 +1507,16 @@ export default function RestaurantDashboard() {
             {activeTab === "tables" && (
               <div className="space-y-8 animate-fade-in text-left">
                 {/* Generation Control panel */}
-                <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl shadow-xs">
-                  <form onSubmit={handleTableGenerateSubmit} className="flex flex-col sm:flex-row items-end gap-4 max-w-lg">
-                    <div className="flex-grow space-y-1.5">
+                <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl shadow-xs space-y-4">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+                    <div>
+                      <h3 className="font-extrabold text-base text-slate-900 dark:text-white">QR Code Generator Studio</h3>
+                      <p className="text-xs text-slate-400">Generates scannable QR codes configured to your live production domain URL.</p>
+                    </div>
+                  </div>
+
+                  <form onSubmit={handleTableGenerateSubmit} className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-end">
+                    <div className="sm:col-span-4 space-y-1.5">
                       <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Number of Dining Tables</label>
                       <input
                         type="number"
@@ -1370,15 +1525,33 @@ export default function RestaurantDashboard() {
                         required
                         value={tableCount}
                         onChange={(e) => setTableCount(e.target.value)}
-                        className="block w-full rounded-xl border border-slate-200 dark:border-slate-850 bg-slate-50 dark:bg-zinc-950 px-4 py-2.5 text-xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 font-semibold"
+                        className="block w-full rounded-xl border border-slate-200 dark:border-slate-850 bg-slate-50 dark:bg-zinc-950 px-4 py-2.5 text-xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 font-semibold text-slate-900 dark:text-white"
                       />
                     </div>
-                    <button
-                      type="submit"
-                      className={`rounded-xl px-5 py-3 text-xs font-bold text-white shadow-md active:scale-95 transition-all cursor-pointer flex-none ${themeButton[profile.themeColor]}`}
-                    >
-                      Generate Unique QR codes
-                    </button>
+
+                    <div className="sm:col-span-5 space-y-1.5">
+                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Live Website Base Domain URL</label>
+                      <input
+                        type="text"
+                        required
+                        value={customBaseUrl}
+                        onChange={(e) => {
+                          setCustomBaseUrl(e.target.value);
+                          generateTablesList(parseInt(tableCount) || 20, e.target.value);
+                        }}
+                        placeholder="https://your-domain.com"
+                        className="block w-full rounded-xl border border-slate-200 dark:border-slate-850 bg-slate-50 dark:bg-zinc-950 px-4 py-2.5 text-xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 font-mono text-slate-800 dark:text-slate-200"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-3">
+                      <button
+                        type="submit"
+                        className={`w-full rounded-xl px-4 py-2.5 text-xs font-bold text-white shadow-md active:scale-95 transition-all cursor-pointer ${themeButton[profile.themeColor]}`}
+                      >
+                        Re-generate QRs ⚡
+                      </button>
+                    </div>
                   </form>
                 </div>
 
@@ -1395,29 +1568,46 @@ export default function RestaurantDashboard() {
                       </div>
 
                       {/* Real dynamic QR Code representation */}
-                      <div className="w-28 h-28 bg-white p-2 rounded-2xl border border-slate-250/70 shadow-inner flex items-center justify-center relative group">
+                      <div className="w-32 h-32 bg-white p-2 rounded-2xl border border-slate-250/70 shadow-inner flex items-center justify-center relative group">
                         <QRCodeImage value={table.url} />
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center rounded-2xl transition-opacity duration-200">
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col gap-2 items-center justify-center rounded-2xl transition-opacity duration-200 p-2">
                           <Link
                             href={table.url}
                             target="_blank"
-                            className="bg-white text-slate-900 text-[10px] font-bold px-3 py-1.5 rounded-lg shadow-sm hover:bg-slate-50 transition-colors"
+                            className="bg-white text-slate-900 text-[10px] font-bold px-3 py-1 rounded-lg shadow-sm hover:bg-slate-50 transition-colors w-full text-center"
                           >
                             Open Menu 🔗
                           </Link>
+                          <button
+                            type="button"
+                            onClick={() => handleCopyTableUrl(table.url, table.name)}
+                            className="bg-brand-500 text-white text-[10px] font-bold px-3 py-1 rounded-lg shadow-sm hover:bg-brand-600 transition-colors w-full"
+                          >
+                            Copy Link 📋
+                          </button>
                         </div>
                       </div>
 
                       <div className="space-y-2 w-full pt-1.5 border-t border-slate-100 dark:border-slate-800">
-                        <p className="text-[10px] text-slate-500 font-mono select-all truncate">
+                        <p className="text-[9px] text-slate-500 font-mono select-all truncate bg-slate-50 dark:bg-zinc-950 p-1.5 rounded-lg border border-slate-150 dark:border-slate-850" title={table.url}>
                           {table.url}
                         </p>
-                        <button
-                          onClick={() => window.print()}
-                          className="w-full bg-slate-50 hover:bg-slate-100 dark:bg-zinc-950 dark:hover:bg-zinc-800 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 rounded-xl py-2 text-[10px] font-bold shadow-3xs cursor-pointer"
-                        >
-                          Print QR Sheet 🖨️
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleCopyTableUrl(table.url, table.name)}
+                            className="flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-300 rounded-xl py-1.5 text-[10px] font-bold cursor-pointer"
+                          >
+                            Copy 📋
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => window.print()}
+                            className="flex-1 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200 text-white rounded-xl py-1.5 text-[10px] font-bold cursor-pointer"
+                          >
+                            Print 🖨️
+                          </button>
+                        </div>
                       </div>
 
                     </div>

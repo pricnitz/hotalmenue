@@ -668,13 +668,18 @@ export default function WaiterDashboard() {
                         key={cat._id}
                         type="button"
                         onClick={() => setActiveCategory(cat.name)}
-                        className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                          activeCategory.toLowerCase() === cat.name.toLowerCase()
+                        className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                          activeCategory.trim().toLowerCase() === cat.name.trim().toLowerCase()
                             ? "bg-brand-500 text-white shadow-sm"
                             : "text-slate-500 hover:bg-slate-100 dark:hover:bg-zinc-900 hover:text-slate-800"
                         }`}
                       >
-                        🏷️ {cat.name}
+                        {cat.svg ? (
+                          <img src={cat.svg} alt="" className="w-4 h-4 object-contain flex-none" />
+                        ) : (
+                          <span>🏷️</span>
+                        )}
+                        <span className="truncate">{cat.name}</span>
                       </button>
                     ))}
                   </div>
@@ -682,18 +687,20 @@ export default function WaiterDashboard() {
                   {/* Filtered Dishes Grid scrollable viewport with images */}
                   <div className="col-span-8 overflow-y-auto pr-1 no-scrollbar">
                     {menuItems.filter(item => {
+                      const itemCat = item.category ? item.category.trim().toLowerCase() : "";
+                      const activeCat = activeCategory ? activeCategory.trim().toLowerCase() : "";
                       const matchesSearch = item.name.toLowerCase().includes(menuSearch.toLowerCase()) || 
-                                            item.category.toLowerCase().includes(menuSearch.toLowerCase());
-                      const matchesCategory = activeCategory === "All" || 
-                                              item.category.toLowerCase() === activeCategory.toLowerCase();
+                                            itemCat.includes(menuSearch.toLowerCase());
+                      const matchesCategory = activeCat === "all" || itemCat === activeCat;
                       return matchesSearch && matchesCategory;
                     }).length > 0 ? (
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                         {menuItems.filter(item => {
+                          const itemCat = item.category ? item.category.trim().toLowerCase() : "";
+                          const activeCat = activeCategory ? activeCategory.trim().toLowerCase() : "";
                           const matchesSearch = item.name.toLowerCase().includes(menuSearch.toLowerCase()) || 
-                                                item.category.toLowerCase().includes(menuSearch.toLowerCase());
-                          const matchesCategory = activeCategory === "All" || 
-                                                  item.category.toLowerCase() === activeCategory.toLowerCase();
+                                                itemCat.includes(menuSearch.toLowerCase());
+                          const matchesCategory = activeCat === "all" || itemCat === activeCat;
                           return matchesSearch && matchesCategory;
                         }).map((item) => {
                           const qtyInCart = newOrderCart.find(i => i._id === item._id)?.qty || 0;

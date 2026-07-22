@@ -14,7 +14,7 @@ export default function TableMenuPage() {
   const [restaurantProfile, setRestaurantProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const [activeCategory, setActiveCategory] = useState("all");
+  const [activeCategory, setActiveCategory] = useState("All Dishes");
   const [searchQuery, setSearchQuery] = useState("");
   const [vegOnly, setVegOnly] = useState(false);
 
@@ -148,16 +148,19 @@ export default function TableMenuPage() {
 
   // Filter items
   const filteredItems = menuItems.filter((item) => {
+    const itemCat = item.category ? item.category.trim().toLowerCase() : "";
+    const activeCat = activeCategory ? activeCategory.trim().toLowerCase() : "";
+
     const matchesCategory =
-      activeCategory === "all" ||
-      activeCategory === "All Dishes" ||
-      item.category.toLowerCase() === activeCategory.toLowerCase();
+      activeCat === "all" ||
+      activeCat === "all dishes" ||
+      itemCat === activeCat;
     
     const matchesVeg = !vegOnly || item.isVeg === true;
 
     const matchesSearch =
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchQuery.toLowerCase());
+      (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()));
 
     return matchesCategory && matchesVeg && matchesSearch && item.isAvailable;
   });
@@ -284,19 +287,29 @@ export default function TableMenuPage() {
 
             {/* Categories Pills */}
             <div className="flex gap-2 overflow-x-auto py-1.5 no-scrollbar scroll-smooth">
-              {categories.map((cat, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setActiveCategory(cat.name)}
-                  className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-                    activeCategory.toLowerCase() === cat.name.toLowerCase()
-                      ? "bg-brand-500 text-white shadow-md shadow-brand-500/10"
-                      : "bg-white dark:bg-zinc-950 text-slate-500 border border-slate-200/50 dark:border-slate-800/80 hover:bg-slate-50"
-                  }`}
-                >
-                  {cat.name}
-                </button>
-              ))}
+              {categories.map((cat, idx) => {
+                const isSelected =
+                  activeCategory.trim().toLowerCase() === cat.name.trim().toLowerCase() ||
+                  ((cat.name === "All Dishes" || cat.name === "all") &&
+                    (activeCategory.toLowerCase() === "all" || activeCategory.toLowerCase() === "all dishes"));
+
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => setActiveCategory(cat.name)}
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-2 ${
+                      isSelected
+                        ? "bg-brand-500 text-white shadow-md shadow-brand-500/10"
+                        : "bg-white dark:bg-zinc-950 text-slate-500 border border-slate-200/50 dark:border-slate-800/80 hover:bg-slate-50"
+                    }`}
+                  >
+                    {cat.svg && (
+                      <img src={cat.svg} alt="" className="w-4 h-4 object-contain flex-none" />
+                    )}
+                    <span>{cat.name}</span>
+                  </button>
+                );
+              })}
             </div>
 
             {/* Menu Items List */}

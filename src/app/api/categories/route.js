@@ -23,7 +23,7 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { name, restaurantId } = body;
+    const { name, svg, restaurantId } = body;
 
     if (!name) {
       return NextResponse.json({ error: "Category name is required" }, { status: 400 });
@@ -42,7 +42,7 @@ export async function POST(request) {
       return NextResponse.json({ error: "Category already exists" }, { status: 400 });
     }
 
-    const newCategory = { name, restaurantId: restaurantId || "" };
+    const newCategory = { name, svg: svg || "", restaurantId: restaurantId || "" };
     const result = await collection.insertOne(newCategory);
     const saved = { ...newCategory, _id: result.insertedId };
 
