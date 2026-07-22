@@ -47,7 +47,7 @@ export default function About() {
       <Header />
 
       <main className="flex-grow">
-        
+
         {/* HERO HEADER */}
         <section className="bg-slate-50 dark:bg-zinc-950 py-16 sm:py-24 border-b border-slate-200 dark:border-slate-800">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center space-y-6">
