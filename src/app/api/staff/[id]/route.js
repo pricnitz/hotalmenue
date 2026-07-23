@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import clientPromise from "../../../../lib/mongodb";
 import { ObjectId } from "mongodb";
+import { validatePassword } from "../../../../lib/passwordValidation";
 
 export async function PUT(request, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     if (!id) {
       return NextResponse.json({ error: "Staff ID is required" }, { status: 400 });
     }
@@ -22,7 +23,14 @@ export async function PUT(request, { params }) {
     if (email !== undefined) updateData.email = email.toLowerCase().trim();
     if (role !== undefined) updateData.role = role;
     if (phone !== undefined) updateData.phone = phone;
-    if (password && password.trim() !== "") updateData.password = password.trim();
+
+    if (password && password.trim() !== "") {
+      const passVal = validatePassword(password);
+      if (!passVal.isValid) {
+        return NextResponse.json({ error: passVal.error }, { status: 400 });
+      }
+      updateData.password = password.trim();
+    }
 
     // Check duplicate email if email is being updated
     if (email) {
@@ -53,21 +61,15 @@ export async function PUT(request, { params }) {
 
 export async function DELETE(request, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     if (!id) {
       return NextResponse.json({ error: "Staff ID is required" }, { status: 400 });
     }
 
     const client = await clientPromise;
     const db = client.db("hotelmenu");
-    const collection = db.collection("users");
 
-    const result = await collection.deleteOne({ _id: new ObjectId(id) });
-
-    if (result.deletedCount === 0) {
-      return NextResponse.json({ error: "Staff member not found" }, { status: 404 });
-    }
-
+    await db.collection("users").deleteOne({ _id: new ObjectId(id) });
     return NextResponse.json({ message: "Staff member deleted successfully" }, { status: 200 });
   } catch (error) {
     console.error("DELETE Staff ID Error:", error);

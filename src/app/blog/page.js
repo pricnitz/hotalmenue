@@ -5,10 +5,12 @@ import Link from "next/link";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import { BookOpenIcon, ClockIcon, ArrowRightIcon, XIcon } from "../../components/Icons";
+import { slugify } from "../../lib/slugify";
 
 const fallbackPosts = [
   {
     _id: "1",
+    slug: "how-qr-menus-increase-average-table-value-by-22",
     title: "How QR Menus Increase Average Table Value by 22%",
     summary: "A comprehensive data study of digital ordering habits. Learn how dynamic pairings and high-res photography trigger upselling without waiter intervention.",
     content: `Digital menus have revolutionized how diners browse food. By presenting high-resolution imagery and automatic pairing suggestions (like suggesting fries with a burger), restaurants experience a proven 22% increase in average ticket size.
@@ -20,11 +22,12 @@ Key Takeaways:
     category: "Operations",
     readTime: "5 min read",
     date: "Jul 8, 2026",
-    author: "Sylvia Chen",
+    author: "Payal Pandit",
     coverImage: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80"
   },
   {
     _id: "2",
+    slug: "dedicated-technical-support-standee-branding-for-modern-restaurants",
     title: "Dedicated Technical Support & Standee Branding for Modern Restaurants",
     summary: "Why having 1-on-1 technical and non-technical support transforms digital menu adoption for your restaurant staff and patrons.",
     content: `Onboarding a new restaurant technology shouldn't feel overwhelming. With TableMenu.in, every outlet receives 1 Month of Free Dedicated Support covering setup, staff training, and physical QR standee design.
@@ -36,11 +39,12 @@ Benefits of Dedicated Support:
     category: "Guides",
     readTime: "4 min read",
     date: "Jul 15, 2026",
-    author: "TableMenu Team",
+    author: "Durgawati Pandit",
     coverImage: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&q=80"
   },
   {
     _id: "3",
+    slug: "how-to-set-up-kitchen-display-system-kds-terminal",
     title: "How to Set Up a Kitchen Display System (KDS) Terminal",
     summary: "Why thermal paper receipt printing is costing you money. Learn how color-coded timers on mounted tablets optimize prep workflows.",
     content: `Paper receipt printing in hot kitchens creates clutter, lost tickets, and slow prep times. Replacing thermal printers with web-based tablets connected directly to customer QR carts guarantees instant order arrival.
@@ -52,7 +56,7 @@ KDS Advantages:
     category: "Hardware",
     readTime: "4 min read",
     date: "Jun 11, 2026",
-    author: "Sarah Jenkins",
+    author: "Nitesh Ahirwar",
     coverImage: "https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&q=80"
   }
 ];
@@ -106,17 +110,19 @@ export default function BlogPage() {
           {/* Posts Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {blogs.map((post) => (
-              <article
+              <Link
                 key={post._id}
-                onClick={() => setSelectedPost(post)}
-                className="bg-white dark:bg-zinc-900 rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl hover:shadow-2xl hover:scale-[1.01] transition-all cursor-pointer flex flex-col justify-between"
+                href={`/blog/${post.slug || slugify(post.title)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-white dark:bg-zinc-900 rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl hover:shadow-2xl hover:scale-[1.01] transition-all cursor-pointer flex flex-col justify-between group"
               >
                 {post.coverImage && (
                   <div className="h-48 w-full overflow-hidden relative bg-slate-100 dark:bg-zinc-800">
                     <img
                       src={post.coverImage}
                       alt={post.title}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute top-4 left-4 bg-brand-500 text-white text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider shadow-md">
                       {post.category || "Guide"}
@@ -124,13 +130,13 @@ export default function BlogPage() {
                   </div>
                 )}
 
-                <div className="p-6 space-y-4 flex-grow flex flex-col justify-between">
+                <div className="p-6 space-y-4 flex-grow flex flex-col justify-between text-left">
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-xs text-slate-400">
                       <ClockIcon className="w-3.5 h-3.5" />
                       <span>{post.readTime || "5 min read"}</span>
                     </div>
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-snug hover:text-brand-500 transition-colors">
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-snug group-hover:text-brand-500 transition-colors">
                       {post.title}
                     </h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-3 leading-relaxed">
@@ -139,11 +145,11 @@ export default function BlogPage() {
                   </div>
 
                   <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-semibold text-brand-500">
-                    <span>Read Article</span>
+                    <span>Read Article ↗</span>
                     <ArrowRightIcon className="w-4 h-4" />
                   </div>
                 </div>
-              </article>
+              </Link>
             ))}
           </div>
 

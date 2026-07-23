@@ -21,9 +21,10 @@ export async function POST(request) {
         if (user.role === "waiter") redirectPath = "/dashboard/waiter";
         if (user.role === "kitchen") redirectPath = "/dashboard/kitchen";
         if (user.role === "billing") redirectPath = "/dashboard/waiter";
+        if (user.role === "content") redirectPath = "/dashboard/content";
 
         return NextResponse.json(
-          { role: user.role, redirect: redirectPath, userId: user._id, restaurantId: user.restaurantId || "" },
+          { role: user.role, redirect: redirectPath, userId: user._id, email: user.email, name: user.name || "", restaurantId: user.restaurantId || "" },
           { status: 200 }
         );
       }
@@ -57,6 +58,9 @@ export async function POST(request) {
     // 3. Fallback for Static Demo Accounts
     if ((lowerEmail === "master@tablemenu.in" || lowerEmail === "master@quickbite.com") && pw === "password") {
       return NextResponse.json({ role: "master", redirect: "/dashboard/master" }, { status: 200 });
+    }
+    if (lowerEmail === "content@tablemenu.in" && pw === "password") {
+      return NextResponse.json({ role: "content", redirect: "/dashboard/content", email: "content@tablemenu.in" }, { status: 200 });
     }
     if (lowerEmail === "owner@cafe.com" && pw === "password") {
       return NextResponse.json({ role: "owner", redirect: "/dashboard/restaurant" }, { status: 200 });

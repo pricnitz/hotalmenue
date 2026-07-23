@@ -15,6 +15,7 @@ export default function FeaturesPage() {
       icon: <QrCodeIcon className="w-8 h-8 text-brand-500" />,
       tag: "Customer Facing",
       title: "Smart QR Menu & Digital Ordering",
+      link: "/features/qr-menu",
       desc: "Provide your guests with a fast, modern browser-based menu. Replace printing costs with real-time editing.",
       details: [
         "Real-time item status (mark 86'ed/out-of-stock instantly)",
@@ -28,6 +29,7 @@ export default function FeaturesPage() {
       icon: <TableIcon className="w-8 h-8 text-brand-500" />,
       tag: "Dining Room",
       title: "Live Table & Waiter Management",
+      link: "/features/qr-menu",
       desc: "Assign tables, map service zones, and track seating times without physical logbooks.",
       details: [
         "Table-specific QR generation with anti-fraud geo-verification",
@@ -41,6 +43,7 @@ export default function FeaturesPage() {
       icon: <ChefHatIcon className="w-8 h-8 text-brand-500" />,
       tag: "Kitchen Operations",
       title: "Kitchen Display System (KDS)",
+      link: "/features/kitchen-display-system",
       desc: "Ditch thermal paper printers. Streamline orders to cooking terminals with real-time sync.",
       details: [
         "Responsive web-based KDS app (works on any Android/iOS tablet or TV)",
@@ -54,6 +57,7 @@ export default function FeaturesPage() {
       icon: <ClockIcon className="w-8 h-8 text-brand-500" />,
       tag: "Checkout & Payments",
       title: "Contactless Payments & Ledger",
+      link: "/features/restaurant-analytics",
       desc: "Enable guests to check out on their own schedule with direct payment integrations.",
       details: [
         "Stripe, PayPal, Apple Pay, Google Pay, and UPI gateways supported",
@@ -67,6 +71,7 @@ export default function FeaturesPage() {
       icon: <ChartIcon className="w-8 h-8 text-brand-500" />,
       title: "Advanced POS Analytics & Reports",
       tag: "Back Office",
+      link: "/features/restaurant-analytics",
       desc: "Extract actionable food-costing and consumer insight data directly from your sales.",
       details: [
         "Bestselling dishes analysis and menu engineering grid",
@@ -80,6 +85,7 @@ export default function FeaturesPage() {
       icon: <SparklesIcon className="w-8 h-8 text-brand-500" />,
       title: "Upselling Engine & Campaigns",
       tag: "Marketing",
+      link: "/features/restaurant-analytics",
       desc: "Run campaigns and automate marketing directly from customer order logs.",
       details: [
         "Automated cross-sell popups ('Would you like to add fries?')",
@@ -107,7 +113,7 @@ export default function FeaturesPage() {
               Features Deep-Dive
             </h1>
             <p className="text-lg text-slate-500 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
-              Explore the advanced features powering restaurant dining rooms, kitchens, and back-office management.
+              Explore the advanced features powering restaurant dining rooms, kitchens, and back-office management. Click any module to view full details.
             </p>
           </div>
         </section>
@@ -124,17 +130,22 @@ export default function FeaturesPage() {
                   }`}
                 >
                   {/* Visual mockup block */}
-                  <div className="flex-1 w-full bg-slate-50 dark:bg-zinc-950 rounded-3xl p-8 border border-slate-200 dark:border-slate-800 relative overflow-hidden aspect-[4/3] flex flex-col justify-between shadow-xs">
+                  <Link
+                    href={feat.link}
+                    className="flex-1 w-full bg-slate-50 dark:bg-zinc-950 rounded-3xl p-8 border border-slate-200 dark:border-slate-800 relative overflow-hidden aspect-[4/3] flex flex-col justify-between shadow-xs hover:border-brand-500/50 hover:shadow-lg transition-all group cursor-pointer"
+                  >
                     <div className="absolute inset-0 bg-gradient-to-tr from-brand-500/5 to-transparent z-0"></div>
                     <div className="relative z-10 flex items-center justify-between">
                       <span className="text-[10px] font-bold uppercase tracking-wider bg-brand-50 dark:bg-brand-950/40 text-brand-600 dark:text-brand-400 px-3 py-1 rounded-full">
                         {feat.tag}
                       </span>
-                      <span className="text-xs text-slate-400 font-semibold">TableMenu.in POS Module</span>
+                      <span className="text-xs text-brand-500 font-bold group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                        View Details <ArrowRightIcon className="w-3.5 h-3.5" />
+                      </span>
                     </div>
                     
                     <div className="relative z-10 flex flex-col items-center justify-center py-6 text-slate-400">
-                      <div className="p-4 bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200/50 dark:border-slate-800 shadow-md text-brand-500">
+                      <div className="p-4 bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200/50 dark:border-slate-800 shadow-md text-brand-500 group-hover:scale-110 transition-transform">
                         {feat.icon}
                       </div>
                       <span className="text-xs font-bold text-slate-900 dark:text-white mt-4 text-center">
@@ -145,22 +156,24 @@ export default function FeaturesPage() {
                     <div className="relative z-10 border-t border-slate-100 dark:border-slate-800/80 pt-3 text-center">
                       <span className="text-[11px] font-medium text-slate-400">Cloud Sync: 🟢 Synchronized</span>
                     </div>
-                  </div>
+                  </Link>
 
                   {/* Info list */}
                   <div className="flex-1 space-y-6 text-left">
                     <span className="text-xs font-bold uppercase tracking-wider text-brand-500">
                       {feat.tag}
                     </span>
-                    <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white leading-tight">
-                      {feat.title}
+                    <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white leading-tight hover:text-brand-500 transition-colors">
+                      <Link href={feat.link}>
+                        {feat.title}
+                      </Link>
                     </h3>
                     <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
                       {feat.desc}
                     </p>
 
-                    <div className="border-t border-slate-100 dark:border-slate-800 pt-6">
-                      <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Detailed Modules:</h4>
+                    <div className="border-t border-slate-100 dark:border-slate-800 pt-6 space-y-4">
+                      <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Detailed Modules:</h4>
                       <ul className="space-y-3">
                         {feat.details.map((detail, dIdx) => (
                           <li key={dIdx} className="flex items-start gap-2.5 text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
@@ -169,6 +182,15 @@ export default function FeaturesPage() {
                           </li>
                         ))}
                       </ul>
+
+                      <div className="pt-2">
+                        <Link
+                          href={feat.link}
+                          className="inline-flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-brand-500 hover:text-brand-600 border border-brand-500/20 bg-brand-50 dark:bg-brand-950/30 px-4 py-2.5 rounded-xl transition-all hover:shadow-md cursor-pointer"
+                        >
+                          Explore {feat.title} Module <ArrowRightIcon className="w-4 h-4" />
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 </div>

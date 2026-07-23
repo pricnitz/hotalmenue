@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import clientPromise from "../../../lib/mongodb";
-import { ObjectId } from "mongodb";
+import { validatePassword } from "../../../lib/passwordValidation";
 
 export async function GET(request) {
   try {
@@ -8,7 +8,7 @@ export async function GET(request) {
     const restaurantId = searchParams.get("restaurantId");
 
     if (!restaurantId) {
-      return NextResponse.json({ error: "Restaurant ID is required" }, { status: 400 });
+      return NextResponse.json({ error: "restaurantId query param is required" }, { status: 400 });
     }
 
     const client = await clientPromise;
@@ -21,7 +21,7 @@ export async function GET(request) {
         restaurantId: restaurantId,
         role: { $in: ["waiter", "kitchen", "billing"] }
       })
-      .project({ password: 0 }) // Exclude passwords from response
+      .project({ password: 0 })
       .toArray();
 
     return NextResponse.json(staff, { status: 200 });
@@ -41,6 +41,11 @@ export async function POST(request) {
         { error: "Email, Password, Role, and Restaurant ID are required fields" },
         { status: 400 }
       );
+    }
+
+    const passVal = validatePassword(password);
+    if (!passVal.isValid) {
+      return NextResponse.json({ error: passVal.error }, { status: 400 });
     }
 
     if (!["waiter", "kitchen", "billing"].includes(role)) {

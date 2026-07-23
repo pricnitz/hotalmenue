@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import clientPromise from "../../../../lib/mongodb";
+import { validatePassword } from "../../../../lib/passwordValidation";
 
 export async function POST(request) {
   try {
@@ -11,6 +12,11 @@ export async function POST(request) {
         { error: "Email and Password are required fields" },
         { status: 400 }
       );
+    }
+
+    const passVal = validatePassword(password);
+    if (!passVal.isValid) {
+      return NextResponse.json({ error: passVal.error }, { status: 400 });
     }
 
     const assignedRole = role || "master"; // Defaults to master if not provided

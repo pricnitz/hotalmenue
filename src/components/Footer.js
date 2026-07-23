@@ -24,20 +24,20 @@ export default function Footer() {
       <h2 id="footer-heading" className="sr-only">Footer</h2>
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
         <div className="xl:grid xl:grid-cols-3 xl:gap-8">
-          
+
           {/* Logo & Intro */}
           <div className="space-y-6 xl:col-span-1">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-tr from-brand-500 to-red-500 text-white">
-                <QrCodeIcon className="h-5 w-5" />
-              </div>
-              <span className="text-lg font-bold text-white">
-                tablemenu<span className="text-brand-500 font-extrabold">.in</span>
-              </span>
+            <Link href="/" className="inline-flex items-center transition-all">
+              <img
+                src="/logo/logo.png"
+                alt="TableMenu.in Logo"
+                className="h-10 w-auto object-contain"
+              />
             </Link>
             <p className="text-sm text-slate-400 max-w-xs">
               Empowering restaurants to digitize their dining experience. Create QR Menus, manage table occupancy, and optimize kitchen operations seamlessly.
             </p>
+
             <div className="flex space-x-6">
               {/* Fake social icons */}
               {["twitter", "facebook", "instagram", "linkedin"].map((social) => (
@@ -77,7 +77,7 @@ export default function Footer() {
                 <li><span className="text-sm text-slate-500 cursor-not-allowed">SLA Agreement</span></li>
               </ul>
             </div>
-            
+
             {/* Newsletter Column */}
             <div className="col-span-2 md:col-span-1">
               <h3 className="text-sm font-semibold text-white tracking-wider uppercase">Newsletter</h3>

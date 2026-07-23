@@ -1,12 +1,20 @@
 import { NextResponse } from "next/server";
 import clientPromise from "../../../lib/mongodb";
+import { slugify } from "../../../lib/slugify";
 
 export async function GET() {
   try {
     const client = await clientPromise;
     const db = client.db("hotelmenu");
     const blogs = await db.collection("blogs").find({}).sort({ createdAt: -1 }).toArray();
-    return NextResponse.json(blogs, { status: 200 });
+    
+    // Ensure all returned blogs have a slug property for clean URLs
+    const formattedBlogs = blogs.map(b => ({
+      ...b,
+      slug: b.slug || slugify(b.title)
+    }));
+
+    return NextResponse.json(formattedBlogs, { status: 200 });
   } catch (error) {
     console.error("GET Blogs Error:", error);
     return NextResponse.json({ error: "Failed to fetch blogs" }, { status: 500 });
@@ -27,6 +35,7 @@ export async function POST(request) {
     
     const newBlog = {
       title,
+      slug: slugify(title),
       summary: summary || "",
       content,
       category: category || "Growth & Guides",
@@ -37,7 +46,7 @@ export async function POST(request) {
     };
 
     const result = await db.collection("blogs").insertOne(newBlog);
-    return NextResponse.json({ success: true, id: result.insertedId }, { status: 201 });
+    return NextResponse.json({ success: true, id: result.insertedId, slug: newBlog.slug }, { status: 201 });
   } catch (error) {
     console.error("POST Blog Error:", error);
     return NextResponse.json({ error: "Failed to create blog post" }, { status: 500 });

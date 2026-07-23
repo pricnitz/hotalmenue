@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import QRCode from "qrcode";
 import { QrCodeIcon, ChefHatIcon, TableIcon, ClockIcon, ChartIcon, CheckCircleIcon, SparklesIcon, MailIcon, PhoneIcon, MapPinIcon } from "../../../components/Icons";
 import { useSocket } from "../../../lib/useSocket";
+import { validatePassword } from "../../../lib/passwordValidation";
 
 const QRCodeImage = ({ value }) => {
   const [src, setSrc] = useState("");
@@ -110,6 +111,8 @@ export default function RestaurantDashboard() {
     role: "waiter",
   });
   const [editingStaff, setEditingStaff] = useState(null);
+  const [resetPassStaff, setResetPassStaff] = useState(null);
+  const [newStaffPassword, setNewStaffPassword] = useState("");
 
   const getSubdomain = () => {
     const fallback = profile.restaurantName
@@ -224,6 +227,13 @@ export default function RestaurantDashboard() {
       alert("Username, Password, and Role are required.");
       return;
     }
+
+    const passVal = validatePassword(staffForm.password);
+    if (!passVal.isValid) {
+      alert(passVal.error);
+      return;
+    }
+
     const finalEmail = `${staffForm.emailUsername.trim()}@${getStaffDomain()}`;
     try {
       const restId = localStorage.getItem("restaurantId") || "";
@@ -256,6 +266,15 @@ export default function RestaurantDashboard() {
       alert("Email and Role are required.");
       return;
     }
+
+    if (editingStaff.password && editingStaff.password.trim() !== "") {
+      const passVal = validatePassword(editingStaff.password);
+      if (!passVal.isValid) {
+        alert(passVal.error);
+        return;
+      }
+    }
+
     try {
       const res = await fetch(`/api/staff/${editingStaff._id}`, {
         method: "PUT",
@@ -271,6 +290,39 @@ export default function RestaurantDashboard() {
       }
     } catch (err) {
       console.error("Failed to update staff member:", err);
+    }
+  };
+
+  const handleResetStaffPassword = async (e) => {
+    e.preventDefault();
+    if (!resetPassStaff || !newStaffPassword) {
+      alert("Please enter a new password.");
+      return;
+    }
+
+    const passVal = validatePassword(newStaffPassword);
+    if (!passVal.isValid) {
+      alert(passVal.error);
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/staff/${resetPassStaff._id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: newStaffPassword }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(`Password for ${resetPassStaff.name || resetPassStaff.email} updated successfully!`);
+        setResetPassStaff(null);
+        setNewStaffPassword("");
+        fetchStaff();
+      } else {
+        alert(data.error || "Failed to reset password");
+      }
+    } catch (err) {
+      console.error("Error resetting staff password:", err);
     }
   };
 
@@ -2151,13 +2203,19 @@ export default function RestaurantDashboard() {
                             <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-slate-200/50 dark:border-slate-800/50">
                               <button
                                 onClick={() => setEditingStaff(member)}
-                                className="px-3 py-1.5 border border-slate-200 dark:border-slate-800 text-[10px] font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer"
+                                className="px-2.5 py-1.5 border border-slate-200 dark:border-slate-800 text-[10px] font-bold rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer"
                               >
                                 Edit Profile
                               </button>
                               <button
+                                onClick={() => { setResetPassStaff(member); setNewStaffPassword(""); }}
+                                className="px-2.5 py-1.5 border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold rounded-lg hover:bg-amber-500/20 cursor-pointer"
+                              >
+                                🔑 Reset Pass
+                              </button>
+                              <button
                                 onClick={() => handleDeleteStaff(member._id)}
-                                className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-600 text-[10px] font-bold rounded-lg cursor-pointer"
+                                className="px-2.5 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-600 text-[10px] font-bold rounded-lg cursor-pointer"
                               >
                                 Delete
                               </button>
@@ -2286,6 +2344,59 @@ export default function RestaurantDashboard() {
                             className="flex-1 py-2.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200 text-white rounded-xl font-bold transition-all shadow-sm cursor-pointer"
                           >
                             Save Changes
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                )}
+
+                {/* Reset Password Modal Overlay */}
+                {resetPassStaff && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+                    <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl shadow-xl w-full max-w-md animate-scale-in text-left space-y-4">
+                      <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-3">
+                        <div>
+                          <h3 className="font-extrabold text-sm text-slate-900 dark:text-white">🔑 Reset Password for {resetPassStaff.name || resetPassStaff.email}</h3>
+                          <p className="text-[10px] text-slate-400 font-mono">{resetPassStaff.email}</p>
+                        </div>
+                        <button
+                          onClick={() => { setResetPassStaff(null); setNewStaffPassword(""); }}
+                          className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-sm font-black cursor-pointer"
+                        >
+                          ✕
+                        </button>
+                      </div>
+
+                      <form onSubmit={handleResetStaffPassword} className="space-y-4 text-xs font-semibold text-slate-500">
+                        <div className="space-y-1">
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">New Account Password</label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="e.g. Aa123@"
+                            value={newStaffPassword}
+                            onChange={(e) => setNewStaffPassword(e.target.value)}
+                            className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-zinc-950 focus:outline-none focus:ring-1 focus:ring-amber-500 font-mono text-slate-800 dark:text-slate-200 text-xs"
+                          />
+                          <p className="text-[10px] text-amber-500 font-semibold pt-1">
+                            ⚠️ Password rule: Min 6 characters, including at least 1 uppercase (A-Z), 1 lowercase (a-z), 1 digit (0-9), and 1 special character (e.g. Aa123@).
+                          </p>
+                        </div>
+
+                        <div className="flex gap-3 pt-2">
+                          <button
+                            type="button"
+                            onClick={() => { setResetPassStaff(null); setNewStaffPassword(""); }}
+                            className="flex-1 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl font-bold transition-all hover:bg-slate-50 dark:hover:bg-zinc-800 cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="submit"
+                            className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold transition-all shadow-md cursor-pointer"
+                          >
+                            Update Password
                           </button>
                         </div>
                       </form>

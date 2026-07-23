@@ -5,9 +5,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { MenuIcon, XIcon, QrCodeIcon } from "./Icons";
 
+
+
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+
+  const logo = "/logo/logo.png";
 
   const navigation = [
     { name: "Features", href: "/features" },
@@ -25,14 +29,13 @@ export default function Header() {
       <nav className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8" aria-label="Top">
         <div className="flex h-16 items-center justify-between w-full">
           {/* Logo */}
-          <div className="flex items-center gap-2">
-            <Link href="/" className="flex items-center gap-2 group">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-brand-500 to-red-500 text-white shadow-md group-hover:scale-105 transition-transform duration-200">
-                <QrCodeIcon className="h-6 w-6" />
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent">
-                tablemenu<span className="text-brand-500 font-extrabold">.in</span>
-              </span>
+          <div className="flex items-center">
+            <Link href="/" className="flex items-center gap-2 grouptransition-all">
+              <img
+                className="h-9 w-auto object-contain hover:scale-105 transition-transform"
+                src={logo}
+                alt="TableMenu.in Logo"
+              />
             </Link>
           </div>
 
@@ -42,11 +45,10 @@ export default function Header() {
               <Link
                 key={link.name}
                 href={link.href}
-                className={`text-sm font-medium transition-colors duration-200 hover:text-brand-500 ${
-                  isActive(link.href)
-                    ? "text-brand-600 dark:text-brand-400 font-semibold"
-                    : "text-slate-600 dark:text-slate-300"
-                }`}
+                className={`text-sm font-medium transition-colors duration-200 hover:text-brand-400 ${isActive(link.href)
+                  ? "text-brand-400 font-extrabold"
+                  : "text-slate-200 font-semibold"
+                  }`}
               >
                 {link.name}
               </Link>
@@ -57,13 +59,13 @@ export default function Header() {
           <div className="hidden md:flex items-center gap-x-4">
             <Link
               href="/auth/login"
-              className="text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-brand-500 transition-colors"
+              className="text-sm font-semibold text-slate-200 hover:text-brand-400 transition-colors"
             >
               Login
             </Link>
             <Link
               href="/auth/register"
-              className="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200 transition-all duration-200"
+              className="inline-flex items-center justify-center rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 px-4 py-2 text-sm font-bold shadow-sm transition-all duration-200"
             >
               Register Restaurant
             </Link>
@@ -102,11 +104,10 @@ export default function Header() {
                 key={link.name}
                 href={link.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`block rounded-lg px-3 py-2 text-base font-medium transition-all ${
-                  isActive(link.href)
-                    ? "bg-brand-50 dark:bg-brand-950/30 text-brand-600 dark:text-brand-400 font-semibold"
-                    : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900"
-                }`}
+                className={`block rounded-lg px-3 py-2 text-base font-medium transition-all ${isActive(link.href)
+                  ? "bg-brand-50 dark:bg-brand-950/30 text-brand-600 dark:text-brand-400 font-semibold"
+                  : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900"
+                  }`}
               >
                 {link.name}
               </Link>

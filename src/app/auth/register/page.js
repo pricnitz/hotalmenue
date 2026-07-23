@@ -64,7 +64,7 @@ export default function RegisterPage() {
           logo: form.logo,
           currency: form.currency,
         };
-        
+
         const res = await fetch("/api/restaurants", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -91,7 +91,7 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8 text-slate-800 dark:text-slate-200">
-      
+
       {/* Back to Home Link */}
       <div className="absolute top-4 left-4">
         <Link href="/" className="text-xs font-semibold text-slate-500 hover:text-brand-500">
@@ -99,10 +99,10 @@ export default function RegisterPage() {
         </Link>
       </div>
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-lg">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-brand-500 to-red-500 text-white shadow-md">
-          <QrCodeIcon className="h-7 w-7" />
-        </div>
+      <div className="sm:mx-auto sm:w-full sm:max-w-lg text-center">
+        {/* <Link href="/" className="inline-flex items-center justify-center bg-slate-950 px-5 py-2.5 rounded-3xl border border-slate-800 shadow-lg hover:border-brand-500/50 transition-all">
+          <img src="/logo/logo.png" alt="TableMenu.in Logo" className="h-12 w-auto object-contain hover:scale-105 transition-transform" />
+        </Link> */}
         <h2 className="mt-6 text-center text-3xl font-extrabold text-slate-900 dark:text-white">
           Create your restaurant dashboard
         </h2>
@@ -116,13 +116,13 @@ export default function RegisterPage() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-lg">
         <div className="bg-white dark:bg-zinc-900 py-8 px-4 border border-slate-200 dark:border-slate-800 shadow-xl rounded-3xl sm:px-10 text-left">
-          
+
           {success && generatedCredentials ? (
             <div className="text-center py-6 space-y-6">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400">
                 <CheckCircleIcon className="h-8 w-8" />
               </div>
-              
+
               <div className="space-y-2">
                 <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white">Registration Successful!</h3>
                 <p className="text-sm text-slate-500">
@@ -136,7 +136,7 @@ export default function RegisterPage() {
                   <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">🔑 Owner Credentials</span>
                   <span className="text-[10px] font-semibold text-brand-500">Active License</span>
                 </div>
-                
+
                 <div className="space-y-3.5 text-xs">
                   <div className="space-y-1">
                     <span className="text-slate-400 block font-medium">User ID / Username:</span>
@@ -144,7 +144,7 @@ export default function RegisterPage() {
                       {generatedCredentials.userId}
                     </p>
                   </div>
-                  
+
                   <div className="space-y-1">
                     <span className="text-slate-400 block font-medium">Temporary Password:</span>
                     <p className="font-mono font-extrabold text-slate-900 dark:text-white bg-white dark:bg-zinc-900 px-3 py-2 rounded-xl border border-slate-200/50 dark:border-slate-800 text-sm">
@@ -197,50 +197,50 @@ export default function RegisterPage() {
                   />
                 </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label htmlFor="cuisine" className="block text-xs font-bold uppercase tracking-wider text-slate-500">
-                    Cuisine Type
-                  </label>
-                  <select
-                    id="cuisine"
-                    name="cuisine"
-                    value={form.cuisine}
-                    onChange={handleInputChange}
-                    className="block w-full px-3 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-zinc-900 shadow-xs focus:outline-none focus:ring-brand-500 focus:border-brand-500 text-sm text-slate-700 dark:text-slate-350"
-                  >
-                    <option value="cafe">Cafe / Coffee Shop</option>
-                    <option value="bistro">Bistro / Diner</option>
-                    <option value="fastfood">Fast Food / Food Truck</option>
-                    <option value="finedining">Fine Dining Restaurant</option>
-                    <option value="bar">Bar / Pub / Lounge</option>
-                  </select>
-                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label htmlFor="cuisine" className="block text-xs font-bold uppercase tracking-wider text-slate-500">
+                      Cuisine Type
+                    </label>
+                    <select
+                      id="cuisine"
+                      name="cuisine"
+                      value={form.cuisine}
+                      onChange={handleInputChange}
+                      className="block w-full px-3 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-zinc-900 shadow-xs focus:outline-none focus:ring-brand-500 focus:border-brand-500 text-sm text-slate-700 dark:text-slate-350"
+                    >
+                      <option value="cafe">Cafe / Coffee Shop</option>
+                      <option value="bistro">Bistro / Diner</option>
+                      <option value="fastfood">Fast Food / Food Truck</option>
+                      <option value="finedining">Fine Dining Restaurant</option>
+                      <option value="bar">Bar / Pub / Lounge</option>
+                    </select>
+                  </div>
 
-                <div className="space-y-1">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500">
-                    Restaurant Logo
-                  </label>
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="file"
-                      accept="image/png, image/jpeg, image/jpg, image/webp"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleLogoUpload(file);
-                      }}
-                      className="block w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 dark:file:bg-zinc-800 dark:file:text-slate-350 cursor-pointer"
-                    />
-                    {form.logo && (
-                      <img
-                        src={form.logo}
-                        alt="Logo Preview"
-                        className="w-10 h-10 rounded-xl object-cover border border-slate-200 dark:border-slate-800 flex-none"
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500">
+                      Restaurant Logo
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="file"
+                        accept="image/png, image/jpeg, image/jpg, image/webp"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleLogoUpload(file);
+                        }}
+                        className="block w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-[10px] file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 dark:file:bg-zinc-800 dark:file:text-slate-350 cursor-pointer"
                       />
-                    )}
+                      {form.logo && (
+                        <img
+                          src={form.logo}
+                          alt="Logo Preview"
+                          className="w-10 h-10 rounded-xl object-cover border border-slate-200 dark:border-slate-800 flex-none"
+                        />
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
               </div>
 
               <div className="space-y-1">

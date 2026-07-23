@@ -187,17 +187,17 @@ export default function Home() {
 
   const testimonials = [
     {
-      name: "Chef Marco Silva",
-      role: "Owner, Bella Italia Bistro",
-      stats: "+24% Average Order Value",
-      quote: "TableMenu.in transformed our busy Friday nights. Guests order drinks immediately upon sitting, and they checkout without waiting for the waiter. Our sales increased and staff stress plummeted.",
+      name: "Rohan Varma",
+      role: "Owner, Velvet Lounge & Cafe",
+      stats: "+22% Average Order Value",
+      quote: "TableMenu.in transformed our lounge service. Guests scan the QR code on the table, order drinks immediately, and our bar & kitchen get tickets on KDS in under 1 second.",
       rating: 5,
     },
     {
       name: "Priya Sharma",
-      role: "Operations Director, Curry Junction (3 locations)",
+      role: "Operations Director, Royal Dining",
       stats: "14 min saved per table turn",
-      quote: "We consolidated our menu management. Changing prices or marking items out-of-stock takes 10 seconds. The analytics help us optimize our prep waste. Essential POS addition.",
+      quote: "Changing menu prices or marking dishes out-of-stock takes 5 seconds on our dashboard. 1 Month Free Support helped our staff get trained with zero friction.",
       rating: 5,
     },
   ];

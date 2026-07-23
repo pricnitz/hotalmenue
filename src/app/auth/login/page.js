@@ -125,10 +125,10 @@ export default function LoginPage() {
         </Link>
       </div>
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-brand-500 to-red-500 text-white shadow-md">
-          <QrCodeIcon className="h-7 w-7" />
-        </div>
+      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
+        <Link href="/" className="inline-flex items-center justify-center bg-slate-950 px-5 py-2.5 rounded-3xl border border-slate-800 shadow-lg hover:border-brand-500/50 transition-all">
+          <img src="/logo/logo.png" alt="TableMenu.in Logo" className="h-12 w-auto object-contain hover:scale-105 transition-transform" />
+        </Link>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-slate-900 dark:text-white">
           Sign in to your kitchen
         </h2>

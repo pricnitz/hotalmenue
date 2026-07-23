@@ -105,7 +105,7 @@ export default function DemoScheduler() {
               value={form.restaurantName}
               onChange={handleInputChange}
               className="block w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-zinc-900 px-4 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-              placeholder="e.g. Bella Italia Bistro"
+              placeholder="e.g. Royal Dining Cafe"
             />
           </div>
 

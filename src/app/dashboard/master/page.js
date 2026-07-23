@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { QrCodeIcon, ChartIcon, UsersIcon, ShieldCheckIcon, CheckCircleIcon, XIcon, SparklesIcon, CalendarIcon, PhoneIcon, MailIcon, MapPinIcon } from "../../../components/Icons";
+import { validatePassword } from "../../../lib/passwordValidation";
 
 export default function MasterDashboard() {
   const router = useRouter();
@@ -98,18 +99,77 @@ export default function MasterDashboard() {
     }
   };
 
+  // Content Users States
+  const [contentUsersList, setContentUsersList] = useState([]);
+  const [contentUserForm, setContentUserForm] = useState({ name: "", email: "", password: "" });
+
   const fetchCmsData = async () => {
     try {
-      const [blogRes, faqRes, priceRes] = await Promise.all([
+      const [blogRes, faqRes, priceRes, contentUserRes] = await Promise.all([
         fetch("/api/blogs"),
         fetch("/api/faqs"),
-        fetch("/api/pricing")
+        fetch("/api/pricing"),
+        fetch("/api/content-users")
       ]);
       if (blogRes.ok) setBlogsList(await blogRes.json());
       if (faqRes.ok) setFaqsList(await faqRes.json());
       if (priceRes.ok) setPricingList(await priceRes.json());
+      if (contentUserRes.ok) setContentUsersList(await contentUserRes.json());
     } catch (e) {
       console.error("Error fetching CMS data:", e);
+    }
+  };
+
+  const handleImageFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Image file size should be less than 5MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setBlogForm((prev) => ({ ...prev, coverImage: event.target.result }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCreateContentUser = async (e) => {
+    e.preventDefault();
+    const passVal = validatePassword(contentUserForm.password);
+    if (!passVal.isValid) {
+      alert(passVal.error);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/content-users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(contentUserForm),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(`Content User account created for ${data.email}!`);
+        setContentUserForm({ name: "", email: "", password: "" });
+        fetchCmsData();
+      } else {
+        alert(data.error || "Failed to create content user");
+      }
+    } catch (e) {
+      console.error("Error creating content user:", e);
+    }
+  };
+
+  const handleDeleteContentUser = async (id) => {
+    if (!confirm("Are you sure you want to delete this Content User?")) return;
+    try {
+      const res = await fetch(`/api/content-users/${id}`, { method: "DELETE" });
+      if (res.ok) fetchCmsData();
+    } catch (e) {
+      console.error("Error deleting content user:", e);
     }
   };
 
@@ -529,12 +589,8 @@ export default function MasterDashboard() {
       {/* Header Nav */}
       <header className="bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-slate-800 px-6 py-4 flex items-center justify-between shadow-xs">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-brand-500 to-red-500 text-white shadow-xs">
-            <QrCodeIcon className="h-5 w-5" />
-          </div>
-          <span className="font-extrabold text-base tracking-tight">
-            TableMenu.in <span className="text-[9px] bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-slate-400 font-extrabold px-2 py-0.5 rounded-md ml-1 border border-slate-200/50 uppercase">MASTER PANEL</span>
-          </span>
+          <img src="/logo/logo.png" alt="TableMenu.in Logo" className="h-9 w-auto object-contain" />
+          <span className="text-[9px] bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-slate-400 font-extrabold px-2 py-0.5 rounded-md border border-slate-200/50 uppercase">MASTER PANEL</span>
         </div>
         <div className="flex items-center gap-4">
           <span className="text-xs text-slate-500 font-semibold hidden sm:inline">Logged in as master@tablemenu.in</span>
@@ -806,6 +862,14 @@ export default function MasterDashboard() {
               >
                 💰 Pricing Plans ({pricingList.length || 3})
               </button>
+              <button
+                onClick={() => setCmsTab("content_users")}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  cmsTab === "content_users" ? "bg-white dark:bg-zinc-950 text-slate-900 dark:text-white shadow-xs" : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                }`}
+              >
+                👤 Content Managers ({contentUsersList.length})
+              </button>
             </div>
 
             {/* CMS SUB-TAB 1: BLOGS MANAGER */}
@@ -856,14 +920,39 @@ export default function MasterDashboard() {
                         </select>
                       </div>
                       <div className="space-y-1">
-                        <label className="text-xs font-bold uppercase text-slate-400">Cover Image URL</label>
-                        <input
-                          type="text"
-                          value={blogForm.coverImage}
-                          onChange={(e) => setBlogForm({ ...blogForm, coverImage: e.target.value })}
-                          placeholder="https://..."
-                          className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-zinc-950 px-3.5 py-2.5 text-xs focus:outline-none focus:border-brand-500"
-                        />
+                        <label className="text-xs font-bold uppercase text-slate-400">Choose Blog Image</label>
+                        {blogForm.coverImage ? (
+                          <div className="relative rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-zinc-950 p-2 flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-3 overflow-hidden">
+                              <img
+                                src={blogForm.coverImage}
+                                alt="Cover Preview"
+                                className="w-14 h-10 object-cover rounded-lg border border-slate-200 dark:border-slate-800 flex-none"
+                              />
+                              <span className="text-xs text-emerald-500 font-bold truncate">Image Attached ✓</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setBlogForm({ ...blogForm, coverImage: "" })}
+                              className="px-2.5 py-1 text-[10px] bg-red-500/10 text-red-500 rounded-lg font-bold hover:bg-red-500/20 cursor-pointer flex-none"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="relative border border-dashed border-slate-300 dark:border-slate-800 hover:border-brand-500 rounded-xl p-2.5 text-center bg-slate-50 dark:bg-zinc-950 transition-all cursor-pointer">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleImageFileChange}
+                              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            />
+                            <div className="flex items-center justify-center gap-2">
+                              <span className="text-sm">📷</span>
+                              <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Choose Image File</span>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -1144,6 +1233,104 @@ export default function MasterDashboard() {
                     ))}
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* CMS SUB-TAB 4: CONTENT USERS MANAGER */}
+            {cmsTab === "content_users" && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fade-in text-left">
+                
+                {/* Create Content User Form */}
+                <div className="lg:col-span-5 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl shadow-xs space-y-4">
+                  <div className="pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <h3 className="font-bold text-slate-900 dark:text-white text-base">Create New Content User</h3>
+                    <p className="text-xs text-slate-400 mt-0.5">Content users can log in to manage blogs, FAQs, and pricing plans only.</p>
+                  </div>
+
+                  <form onSubmit={handleCreateContentUser} className="space-y-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold uppercase text-slate-400">Full Name / Display Name</label>
+                      <input
+                        type="text"
+                        required
+                        value={contentUserForm.name}
+                        onChange={(e) => setContentUserForm({ ...contentUserForm, name: e.target.value })}
+                        placeholder="e.g. Rahul Sharma"
+                        className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-zinc-950 px-3.5 py-2.5 text-xs focus:outline-none focus:border-brand-500"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold uppercase text-slate-400">Login Email ID</label>
+                      <input
+                        type="email"
+                        required
+                        value={contentUserForm.email}
+                        onChange={(e) => setContentUserForm({ ...contentUserForm, email: e.target.value })}
+                        placeholder="e.g. content@tablemenu.in"
+                        className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-zinc-950 px-3.5 py-2.5 text-xs focus:outline-none focus:border-brand-500"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold uppercase text-slate-400">Password</label>
+                      <input
+                        type="text"
+                        required
+                        value={contentUserForm.password}
+                        onChange={(e) => setContentUserForm({ ...contentUserForm, password: e.target.value })}
+                        placeholder="Enter account password..."
+                        className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-zinc-950 px-3.5 py-2.5 text-xs focus:outline-none focus:border-brand-500 font-mono"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="w-full py-3 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-extrabold shadow-md active:scale-95 transition-all cursor-pointer"
+                    >
+                      + Create Content User Account
+                    </button>
+                  </form>
+                </div>
+
+                {/* Active Content Users List */}
+                <div className="lg:col-span-7 space-y-4">
+                  <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xs space-y-4">
+                    <h3 className="font-bold text-slate-900 dark:text-white text-base">Registered Content Managers ({contentUsersList.length})</h3>
+                    
+                    {contentUsersList.length === 0 ? (
+                      <div className="text-center py-10 space-y-2">
+                        <p className="text-xs text-slate-400">No custom content users registered yet.</p>
+                        <p className="text-xs text-slate-400">Default demo account: <span className="font-mono text-brand-500 font-bold">content@tablemenu.in</span> / <span className="font-mono text-brand-500 font-bold">password</span></p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {contentUsersList.map((cUser) => (
+                          <div key={cUser._id} className="p-4 rounded-2xl bg-slate-50 dark:bg-zinc-950 border border-slate-200/50 dark:border-slate-800 flex items-center justify-between gap-4">
+                            <div className="space-y-0.5 text-left">
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-slate-900 dark:text-white text-sm">{cUser.name || "Content User"}</span>
+                                <span className="text-[9px] font-extrabold uppercase bg-indigo-500/10 text-indigo-500 border border-indigo-500/20 px-2 py-0.5 rounded-md">
+                                  Content Role
+                                </span>
+                              </div>
+                              <p className="text-xs font-mono text-slate-400">{cUser.email}</p>
+                              <p className="text-[10px] text-slate-400">Created: {new Date(cUser.createdAt || Date.now()).toLocaleDateString()}</p>
+                            </div>
+
+                            <button
+                              onClick={() => handleDeleteContentUser(cUser._id)}
+                              className="px-3 py-1.5 bg-red-500/10 text-red-500 rounded-lg text-xs font-bold hover:bg-red-500/20 cursor-pointer flex-none"
+                            >
+                              Delete User
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
               </div>
             )}
 
