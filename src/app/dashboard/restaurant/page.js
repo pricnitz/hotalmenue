@@ -2451,6 +2451,200 @@ export default function RestaurantDashboard() {
                 )}
               </div>
             )}
+
+            {/* TAB 6: PROFILE & SUBSCRIPTION SETTINGS */}
+            {activeTab === "settings" && (
+              <div className="space-y-8 animate-fade-in text-left">
+                <div className="space-y-0.5">
+                  <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white">Restaurant Profile & Subscription Management</h2>
+                  <p className="text-xs text-slate-400">View active plan quotas, expiry dates, theme colors, and upgrade your subscription tier.</p>
+                </div>
+
+                {/* ---------------- ACTIVE SUBSCRIPTION PLAN & EXPIRY CARD ---------------- */}
+                <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-zinc-900 border border-slate-800 text-white p-6 sm:p-8 rounded-3xl shadow-xl space-y-6 relative overflow-hidden">
+                  
+                  {/* Top Bar: Plan Name, Status & Currency */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-black uppercase tracking-wider bg-brand-500 text-white px-3 py-1 rounded-full shadow-sm">
+                          ⚡ {profile.planType || "Starter"} Plan Active
+                        </span>
+                        <span className="text-xs font-extrabold bg-slate-800 text-slate-300 border border-slate-700 px-3 py-1 rounded-full">
+                          {profile.currency === "USD" ? "🌐 $ USD Billing" : "🇮🇳 ₹ INR Billing"}
+                        </span>
+                      </div>
+                      <h3 className="text-2xl font-black text-white pt-2 flex items-center gap-2">
+                        {profile.restaurantName}
+                        <span className="text-xs text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-md flex items-center gap-1">
+                          🟢 Active & Verified
+                        </span>
+                      </h3>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <Link
+                        href="/pricing"
+                        className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-brand-500 hover:bg-brand-600 px-5 py-3 text-xs font-black text-white shadow-lg shadow-brand-500/25 active:scale-95 transition-all cursor-pointer"
+                      >
+                        ⚡ Upgrade Subscription Plan
+                      </Link>
+                    </div>
+                  </div>
+
+                  {/* Expiry Date & Renewal Status Info Box */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-950/60 p-4 rounded-2xl border border-slate-800">
+                    <div className="space-y-0.5">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Current Plan Expiry Date</span>
+                      <p className="text-sm font-black text-white">
+                        {profile.planExpiryDate ? new Date(profile.planExpiryDate).toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' }) : "Aug 24, 2026"}
+                      </p>
+                    </div>
+
+                    <div className="space-y-0.5">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Subscription Status</span>
+                      <p className="text-sm font-black text-emerald-400 flex items-center gap-1">
+                        Active 🟢 (Auto-Renews)
+                      </p>
+                    </div>
+
+                    <div className="space-y-0.5">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Support Level</span>
+                      <p className="text-sm font-black text-brand-400">
+                        24/7 Dedicated Support
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Quota Allocation & Progress Bars */}
+                  <div className="space-y-4 pt-2">
+                    <h4 className="font-extrabold text-xs uppercase tracking-wider text-slate-400">Plan Limits & Resource Utilization</h4>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                      {/* Dining Tables Usage */}
+                      <div className="space-y-2 bg-slate-950/40 p-4 rounded-2xl border border-slate-800/80">
+                        <div className="flex justify-between text-xs font-bold">
+                          <span className="text-slate-300">Dining Tables Quota</span>
+                          <span className="text-white">{totalTables} / {getMaxTablesForPlan(profile.planType)} Tables</span>
+                        </div>
+                        <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                          <div
+                            className="bg-brand-500 h-full rounded-full transition-all"
+                            style={{ width: `${Math.min(100, (totalTables / getMaxTablesForPlan(profile.planType)) * 100)}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-[10px] text-slate-400 block">{getMaxTablesForPlan(profile.planType) - totalTables} tables remaining in tier</span>
+                      </div>
+
+                      {/* Menu Items Usage */}
+                      <div className="space-y-2 bg-slate-950/40 p-4 rounded-2xl border border-slate-800/80">
+                        <div className="flex justify-between text-xs font-bold">
+                          <span className="text-slate-300">Menu Items Online</span>
+                          <span className="text-emerald-400">{totalMenuItems} Dishes (Unlimited)</span>
+                        </div>
+                        <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                          <div className="bg-emerald-500 h-full rounded-full w-full"></div>
+                        </div>
+                        <span className="text-[10px] text-slate-400 block">Unlimited items supported</span>
+                      </div>
+
+                      {/* Staff Accounts Usage */}
+                      <div className="space-y-2 bg-slate-950/40 p-4 rounded-2xl border border-slate-800/80">
+                        <div className="flex justify-between text-xs font-bold">
+                          <span className="text-slate-300">Staff Accounts</span>
+                          <span className="text-indigo-400">{staffList.length} / 10 Active</span>
+                        </div>
+                        <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                          <div
+                            className="bg-indigo-500 h-full rounded-full transition-all"
+                            style={{ width: `${Math.min(100, (staffList.length / 10) * 100)}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-[10px] text-slate-400 block">Waitstaff & Kitchen logins</span>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Profile Form Edit Section */}
+                <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-8 rounded-3xl shadow-xs space-y-6">
+                  <h3 className="font-extrabold text-base text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-3">
+                    🏪 Edit Restaurant Outlet Information
+                  </h3>
+
+                  <form onSubmit={handleSaveProfile} className="space-y-6 text-xs font-semibold text-slate-500">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Restaurant Name</label>
+                        <input
+                          type="text"
+                          required
+                          value={profile.restaurantName}
+                          onChange={(e) => setProfile({ ...profile, restaurantName: e.target.value })}
+                          className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-zinc-900 focus:outline-none focus:ring-1 focus:ring-brand-500 text-slate-800 dark:text-slate-200 font-bold"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Billing Currency</label>
+                        <select
+                          value={profile.currency}
+                          onChange={(e) => setProfile({ ...profile, currency: e.target.value })}
+                          className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-zinc-900 focus:outline-none focus:ring-1 focus:ring-brand-500 text-slate-800 dark:text-slate-200 font-bold"
+                        >
+                          <option value="INR">🇮🇳 ₹ INR (Indian Rupee)</option>
+                          <option value="USD">🌐 $ USD (US Dollar)</option>
+                          <option value="EUR">🇪🇺 € EUR (Euro)</option>
+                          <option value="GBP">🇬🇧 £ GBP (British Pound)</option>
+                          <option value="AED">🇦🇪 د.إ AED (UAE Dirham)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Contact Phone</label>
+                        <input
+                          type="text"
+                          value={profile.phone}
+                          onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                          className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-zinc-900 focus:outline-none focus:ring-1 focus:ring-brand-500 text-slate-800 dark:text-slate-200"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Support Email</label>
+                        <input
+                          type="email"
+                          value={profile.email}
+                          onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+                          className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-zinc-900 focus:outline-none focus:ring-1 focus:ring-brand-500 text-slate-800 dark:text-slate-200"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Outlet Address</label>
+                      <input
+                        type="text"
+                        value={profile.address}
+                        onChange={(e) => setProfile({ ...profile, address: e.target.value })}
+                        className="w-full px-3.5 py-2.5 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-zinc-900 focus:outline-none focus:ring-1 focus:ring-brand-500 text-slate-800 dark:text-slate-200"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="px-6 py-3 bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 rounded-xl font-extrabold text-xs shadow-md hover:opacity-90 transition-all cursor-pointer"
+                    >
+                      Save Profile Changes
+                    </button>
+                  </form>
+                </div>
+
+              </div>
+            )}
           </>
         )}
 
