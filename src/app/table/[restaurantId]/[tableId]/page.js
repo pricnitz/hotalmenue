@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { QrCodeIcon, StarIcon, ClockIcon, ChefHatIcon, CheckCircleIcon, SparklesIcon } from "../../../../components/Icons";
+import { QrCodeIcon, StarIcon, ClockIcon, ChefHatIcon, CheckCircleIcon, SparklesIcon, PlusIcon, SearchIcon, UtensilsIcon, FilterIcon } from "../../../../components/Icons";
 import { useSocket } from "../../../../lib/useSocket";
 
 export default function TableMenuPage() {
@@ -40,7 +40,7 @@ export default function TableMenuPage() {
   const enterFullscreenAndDismiss = () => {
     const docEl = document.documentElement;
     const requestFS = docEl.requestFullscreen || docEl.webkitRequestFullscreen || docEl.mozRequestFullScreen || docEl.msRequestFullscreen;
-    
+
     if (requestFS) {
       requestFS.call(docEl)
         .then(() => {
@@ -198,7 +198,6 @@ export default function TableMenuPage() {
 
   // Set brand theme color classes dynamically based on restaurant config
   const themePalettes = {
-    // 1. Vibrant Sunset / Orange (Default - Cafe & Fast Food)
     orange: {
       pageBg: "bg-zinc-950 text-slate-100",
       headerBg: "bg-zinc-950/95 border-zinc-800/80",
@@ -269,7 +268,7 @@ export default function TableMenuPage() {
 
   return (
     <div className={`min-h-screen flex flex-col items-center justify-start font-sans pb-28 ${theme.pageBg}`}>
-      
+
       {/* Immersive Welcome Splash Overlay */}
       {!welcomeDismissed && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-zinc-950/95 backdrop-blur-md p-6 text-center select-none animate-fade-in">
@@ -303,14 +302,14 @@ export default function TableMenuPage() {
               onClick={enterFullscreenAndDismiss}
               className={`w-full py-4 rounded-2xl font-extrabold text-sm shadow-lg active:scale-95 transition-all cursor-pointer ${theme.btnPrimary}`}
             >
-              Explore Menu 🍽️
+              Explore Menu
             </button>
-            
+
             <p className="text-[9px] text-zinc-500">Powered by TableMenu.in OS</p>
           </div>
         </div>
       )}
-      
+
       {/* Table Title Header */}
       <div className={`w-full px-4 pt-6 pb-4 border-b shadow-xs max-w-lg mx-auto flex items-center justify-between sticky top-0 z-20 ${theme.headerBg}`}>
         <div className="text-left">
@@ -340,7 +339,7 @@ export default function TableMenuPage() {
 
       {/* Main Panel */}
       <div className="w-full max-w-lg mx-auto px-4 mt-4 space-y-4">
-        
+
         {orderState === "idle" && (
           <>
             {/* Search & Veg Filter Switch */}
@@ -354,11 +353,10 @@ export default function TableMenuPage() {
               />
               <button
                 onClick={() => setVegOnly(!vegOnly)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-extrabold border transition-all cursor-pointer ${
-                  vegOnly
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-extrabold border transition-all cursor-pointer ${vegOnly
                     ? "bg-emerald-500 text-white border-emerald-500 shadow-md shadow-emerald-500/20"
                     : "border-white/10 text-slate-400 hover:bg-white/5"
-                }`}
+                  }`}
               >
                 🟢 Veg Only
               </button>
@@ -373,9 +371,8 @@ export default function TableMenuPage() {
                   <button
                     key={idx}
                     onClick={() => setActiveCategory(cat.name)}
-                    className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-2 ${
-                      isSelected ? theme.pillActive : theme.pillInactive
-                    }`}
+                    className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-2 ${isSelected ? theme.pillActive : theme.pillInactive
+                      }`}
                   >
                     {cat.svg && (
                       <img src={cat.svg} alt="" className="w-4 h-4 object-contain flex-none" />
@@ -393,7 +390,7 @@ export default function TableMenuPage() {
                   const inCart = cart.find((i) => i._id === item._id);
                   return (
                     <div key={item._id} className={`p-4 rounded-3xl shadow-xs flex justify-between gap-4 text-left relative overflow-hidden transition-all hover:scale-[1.01] ${theme.cardBg}`}>
-                      
+
                       {/* Left: Dish Image (if exists) */}
                       {item.image && (
                         <div className="w-20 h-20 rounded-2xl overflow-hidden flex-none border border-slate-200/50 dark:border-slate-800">
@@ -407,15 +404,14 @@ export default function TableMenuPage() {
 
                       <div className="flex-grow space-y-1.5">
                         <div className="flex items-center gap-2">
-                          <span className={`inline-flex items-center justify-center w-4 h-4 border rounded-sm font-bold text-[9px] ${
-                            item.isVeg ? "border-emerald-500 text-emerald-500" : "border-red-500 text-red-500"
-                          }`}>
+                          <span className={`inline-flex items-center justify-center w-4 h-4 border rounded-sm font-bold text-[9px] ${item.isVeg ? "border-emerald-500 text-emerald-500" : "border-red-500 text-red-500"
+                            }`}>
                             {item.isVeg ? "V" : "N"}
                           </span>
                           <h4 className="font-bold text-sm text-slate-900 dark:text-white leading-tight">{item.name}</h4>
                         </div>
                         <p className="text-xs text-slate-400 leading-relaxed line-clamp-2">{item.description}</p>
-                        
+
                         <div className="flex items-center gap-4 text-[10px] text-slate-400 font-semibold pt-1">
                           <span className="flex items-center gap-1"><ClockIcon className="w-3.5 h-3.5 opacity-60" /> {item.prepTime} min prep</span>
                           <span className={`text-xs ${theme.priceText}`}>{getCurrencySymbol()}{item.price.toFixed(2)}</span>
@@ -476,7 +472,7 @@ export default function TableMenuPage() {
                 <span>Dine-In Table {tableId}</span>
                 <span className="text-emerald-400 font-bold">Session Active</span>
               </div>
-              
+
               <div className="space-y-2.5">
                 {submittedOrder.items.map((i, idx) => (
                   <div key={idx} className="flex justify-between text-xs font-medium">

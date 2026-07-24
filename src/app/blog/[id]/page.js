@@ -195,7 +195,7 @@ export default function BlogDetailPage({ params }) {
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-zinc-950 text-slate-800 dark:text-slate-100 font-sans">
-      
+
       {/* Inject AEO / GEO / SEO JSON-LD Schemas */}
       <script
         type="application/ld+json"
@@ -210,7 +210,7 @@ export default function BlogDetailPage({ params }) {
 
       <main className="flex-grow py-12 sm:py-20">
         <article className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 space-y-8 text-left">
-          
+
           {/* Top Breadcrumb Nav & Category */}
           <div className="space-y-4 border-b border-slate-200 dark:border-slate-800 pb-6">
             <div className="flex items-center justify-between gap-4">
@@ -268,9 +268,7 @@ export default function BlogDetailPage({ params }) {
           <div className="mt-14 pt-10 border-t border-slate-200 dark:border-slate-800 space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <div className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2.5 py-0.5 rounded-md">
-                  💡 Related Q&A & Answer Engine Optimization (AEO)
-                </div>
+
                 <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white mt-1">
                   Frequently Asked Questions (FAQ)
                 </h3>

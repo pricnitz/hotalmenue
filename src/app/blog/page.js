@@ -93,7 +93,7 @@ export default function BlogPage() {
 
       <main className="flex-grow bg-slate-50 dark:bg-zinc-950 py-16 sm:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-12">
-          
+
           {/* Header */}
           <div className="text-center space-y-4 max-w-2xl mx-auto">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-50 dark:bg-brand-950/40 border border-brand-100 dark:border-brand-900/50 text-xs font-bold text-brand-600 dark:text-brand-400 uppercase tracking-wider">
@@ -113,7 +113,6 @@ export default function BlogPage() {
               <Link
                 key={post._id}
                 href={`/blog/${post.slug || slugify(post.title)}`}
-                target="_blank"
                 rel="noopener noreferrer"
                 className="bg-white dark:bg-zinc-900 rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl hover:shadow-2xl hover:scale-[1.01] transition-all cursor-pointer flex flex-col justify-between group"
               >
@@ -159,7 +158,7 @@ export default function BlogPage() {
         {selectedPost && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 animate-fade-in text-slate-800 dark:text-slate-200">
             <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden max-h-[90vh] flex flex-col text-left">
-              
+
               <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between flex-none bg-slate-50 dark:bg-zinc-950">
                 <div>
                   <span className="text-[10px] font-extrabold uppercase tracking-wider text-brand-500 bg-brand-50 dark:bg-brand-950/40 px-2.5 py-1 rounded-full border border-brand-100 dark:border-brand-900/50">

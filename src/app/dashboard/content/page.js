@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { QrCodeIcon, SparklesIcon } from "../../../components/Icons";
+import { QrCodeIcon, SparklesIcon, BookOpenIcon, InfoCircleIcon, ReceiptIcon, PlusIcon, EditIcon, TrashIcon } from "../../../components/Icons";
 
 export default function ContentDashboardPage() {
   const [cmsTab, setCmsTab] = useState("blogs"); // "blogs" | "faqs" | "pricing"
@@ -13,6 +13,7 @@ export default function ContentDashboardPage() {
   const [blogsList, setBlogsList] = useState([]);
   const [faqsList, setFaqsList] = useState([]);
   const [pricingList, setPricingList] = useState([]);
+  const [jobsList, setJobsList] = useState([]);
   
   // Blog Form
   const [blogForm, setBlogForm] = useState({ title: "", category: "Operations", summary: "", content: "", coverImage: "" });
@@ -21,6 +22,10 @@ export default function ContentDashboardPage() {
   // FAQ Form
   const [faqForm, setFaqForm] = useState({ category: "general", question: "", answer: "" });
   const [editingFaqId, setEditingFaqId] = useState(null);
+
+  // Job Form
+  const [jobForm, setJobForm] = useState({ title: "", department: "Engineering", location: "Bhopal, MP / Remote", type: "Full-time", experience: "1-3 Years", description: "", applyEmail: "careers@hotelmenu.in" });
+  const [editingJobId, setEditingJobId] = useState(null);
 
   const handleImageFileChange = (e) => {
     const file = e.target.files?.[0];
@@ -48,14 +53,16 @@ export default function ContentDashboardPage() {
 
   const fetchCmsData = async () => {
     try {
-      const [blogRes, faqRes, priceRes] = await Promise.all([
+      const [blogRes, faqRes, priceRes, jobRes] = await Promise.all([
         fetch("/api/blogs"),
         fetch("/api/faqs"),
-        fetch("/api/pricing")
+        fetch("/api/pricing"),
+        fetch("/api/jobs")
       ]);
       if (blogRes.ok) setBlogsList(await blogRes.json());
       if (faqRes.ok) setFaqsList(await faqRes.json());
       if (priceRes.ok) setPricingList(await priceRes.json());
+      if (jobRes.ok) setJobsList(await jobRes.json());
     } catch (e) {
       console.error("Failed to load CMS data:", e);
     }
@@ -168,6 +175,50 @@ export default function ContentDashboardPage() {
     }
   };
 
+  // Job Posting Handlers
+  const handleJobSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const url = editingJobId ? `/api/jobs/${editingJobId}` : "/api/jobs";
+      const method = editingJobId ? "PUT" : "POST";
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(jobForm),
+      });
+      if (res.ok) {
+        setJobForm({ title: "", department: "Engineering", location: "Bhopal, MP / Remote", type: "Full-time", experience: "1-3 Years", description: "", applyEmail: "careers@hotelmenu.in" });
+        setEditingJobId(null);
+        fetchCmsData();
+      }
+    } catch (e) {
+      console.error("Error saving job posting:", e);
+    }
+  };
+
+  const handleEditJob = (job) => {
+    setEditingJobId(job._id);
+    setJobForm({
+      title: job.title || "",
+      department: job.department || "Engineering",
+      location: job.location || "Bhopal, MP / Remote",
+      type: job.type || "Full-time",
+      experience: job.experience || "1-3 Years",
+      description: job.description || "",
+      applyEmail: job.applyEmail || "careers@hotelmenu.in",
+    });
+  };
+
+  const handleDeleteJob = async (id) => {
+    if (!confirm("Are you sure you want to delete this job posting?")) return;
+    try {
+      const res = await fetch(`/api/jobs/${id}`, { method: "DELETE" });
+      if (res.ok) fetchCmsData();
+    } catch (e) {
+      console.error("Error deleting job posting:", e);
+    }
+  };
+
   const handleLogout = () => {
     setLoggingOut(true);
     setTimeout(() => {
@@ -248,6 +299,14 @@ export default function ContentDashboardPage() {
             }`}
           >
             💰 Pricing Plans ({pricingList.length || 3})
+          </button>
+          <button
+            onClick={() => setCmsTab("jobs")}
+            className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              cmsTab === "jobs" ? "bg-brand-500 text-white shadow-md shadow-brand-500/20" : "text-slate-400 hover:text-white"
+            }`}
+          >
+            💼 Careers / Jobs ({jobsList.length})
           </button>
         </div>
 
@@ -613,6 +672,164 @@ export default function ContentDashboardPage() {
                 ))}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* CMS SUB-TAB 4: CAREERS & JOB POSTINGS MANAGER */}
+        {cmsTab === "jobs" && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fade-in">
+            
+            {/* Job Posting Creation Form */}
+            <div className="lg:col-span-5 bg-zinc-900 border border-slate-800 p-6 rounded-3xl shadow-xs space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <h3 className="font-bold text-white text-base">
+                  {editingJobId ? "Edit Job Posting" : "Publish New Job Opening"}
+                </h3>
+                {editingJobId && (
+                  <button
+                    onClick={() => { setEditingJobId(null); setJobForm({ title: "", department: "Engineering", location: "Bhopal, MP / Remote", type: "Full-time", experience: "1-3 Years", description: "", applyEmail: "careers@hotelmenu.in" }); }}
+                    className="text-xs text-brand-400 font-bold hover:underline cursor-pointer"
+                  >
+                    Cancel Edit
+                  </button>
+                )}
+              </div>
+
+              <form onSubmit={handleJobSubmit} className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-400">Job Title</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Senior Full Stack Next.js Engineer"
+                    value={jobForm.title}
+                    onChange={(e) => setJobForm({ ...jobForm, title: e.target.value })}
+                    className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-xs text-white focus:border-brand-500 focus:outline-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-400">Department</label>
+                    <select
+                      value={jobForm.department}
+                      onChange={(e) => setJobForm({ ...jobForm, department: e.target.value })}
+                      className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5 text-xs text-white focus:outline-none"
+                    >
+                      <option value="Engineering">Engineering</option>
+                      <option value="Product & Design">Product & Design</option>
+                      <option value="Customer Success">Customer Success</option>
+                      <option value="Sales & Growth">Sales & Growth</option>
+                      <option value="Marketing">Marketing</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-400">Employment Type</label>
+                    <select
+                      value={jobForm.type}
+                      onChange={(e) => setJobForm({ ...jobForm, type: e.target.value })}
+                      className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5 text-xs text-white focus:outline-none"
+                    >
+                      <option value="Full-time">Full-time</option>
+                      <option value="Part-time">Part-time</option>
+                      <option value="Contract">Contract</option>
+                      <option value="Internship">Internship</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-400">Location</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Bhopal, MP / Remote"
+                      value={jobForm.location}
+                      onChange={(e) => setJobForm({ ...jobForm, location: e.target.value })}
+                      className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5 text-xs text-white focus:outline-none"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-400">Apply Email</label>
+                    <input
+                      type="email"
+                      placeholder="careers@hotelmenu.in"
+                      value={jobForm.applyEmail}
+                      onChange={(e) => setJobForm({ ...jobForm, applyEmail: e.target.value })}
+                      className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5 text-xs text-white focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-400">Job Overview & Role Responsibilities</label>
+                  <textarea
+                    rows="4"
+                    required
+                    placeholder="Describe role objectives, daily tasks, and requirements..."
+                    value={jobForm.description}
+                    onChange={(e) => setJobForm({ ...jobForm, description: e.target.value })}
+                    className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-xs text-white focus:border-brand-500 focus:outline-none"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-3 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs shadow-md active:scale-95 transition-all cursor-pointer"
+                >
+                  {editingJobId ? "Update Job Opening" : "Publish Job Opening 💼"}
+                </button>
+              </form>
+            </div>
+
+            {/* Published Jobs List */}
+            <div className="lg:col-span-7 space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <h3 className="font-bold text-white text-base">Active Job Openings ({jobsList.length})</h3>
+                <Link href="/careers" target="_blank" className="text-xs text-brand-400 hover:underline">
+                  Preview Careers Page ↗
+                </Link>
+              </div>
+
+              {jobsList.length > 0 ? (
+                <div className="space-y-3">
+                  {jobsList.map((job) => (
+                    <div key={job._id} className="bg-zinc-900 border border-slate-800 p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                      <div className="space-y-1 text-left">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-extrabold uppercase bg-brand-500/10 text-brand-400 px-2 py-0.5 rounded">
+                            {job.department}
+                          </span>
+                          <span className="text-xs text-slate-400">{job.location}</span>
+                        </div>
+                        <h4 className="font-bold text-sm text-white">{job.title}</h4>
+                        <p className="text-xs text-slate-400 line-clamp-1">{job.description}</p>
+                      </div>
+
+                      <div className="flex gap-2 flex-none">
+                        <button
+                          onClick={() => handleEditJob(job)}
+                          className="p-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold cursor-pointer"
+                        >
+                          <EditIcon className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteJob(job._id)}
+                          className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl text-xs font-bold cursor-pointer"
+                        >
+                          <TrashIcon className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-16 bg-zinc-900 border border-slate-800 rounded-3xl text-center">
+                  <p className="text-slate-400 text-xs">No job openings created yet. Use the form on the left to post one.</p>
+                </div>
+              )}
+            </div>
+
           </div>
         )}
 

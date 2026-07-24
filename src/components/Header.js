@@ -30,7 +30,7 @@ export default function Header() {
         <div className="flex h-16 items-center justify-between w-full">
           {/* Logo */}
           <div className="flex items-center">
-            <Link href="/" className="flex items-center gap-2 grouptransition-all">
+            <Link href="/" className="flex items-center gap-2 group transition-all">
               <img
                 className="h-9 w-auto object-contain hover:scale-105 transition-transform"
                 src={logo}
@@ -45,9 +45,9 @@ export default function Header() {
               <Link
                 key={link.name}
                 href={link.href}
-                className={`text-sm font-medium transition-colors duration-200 hover:text-brand-400 ${isActive(link.href)
-                  ? "text-brand-400 font-extrabold"
-                  : "text-slate-200 font-semibold"
+                className={`text-sm font-medium transition-colors duration-200 hover:text-brand-500 dark:hover:text-brand-400 ${isActive(link.href)
+                  ? "text-brand-500 dark:text-brand-400 font-extrabold"
+                  : "text-slate-700 dark:text-slate-200 font-semibold"
                   }`}
               >
                 {link.name}
@@ -59,13 +59,13 @@ export default function Header() {
           <div className="hidden md:flex items-center gap-x-4">
             <Link
               href="/auth/login"
-              className="text-sm font-semibold text-slate-200 hover:text-brand-400 transition-colors"
+              className="text-sm font-semibold text-slate-700 dark:text-slate-200 hover:text-brand-500 dark:hover:text-brand-400 transition-colors"
             >
               Login
             </Link>
             <Link
               href="/auth/register"
-              className="inline-flex items-center justify-center rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 px-4 py-2 text-sm font-bold shadow-sm transition-all duration-200"
+              className="inline-flex items-center justify-center rounded-xl bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200 border border-slate-700 dark:border-slate-300 px-4 py-2 text-sm font-bold shadow-sm transition-all duration-200"
             >
               Register Restaurant
             </Link>

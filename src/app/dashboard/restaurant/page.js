@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import QRCode from "qrcode";
-import { QrCodeIcon, ChefHatIcon, TableIcon, ClockIcon, ChartIcon, CheckCircleIcon, SparklesIcon, MailIcon, PhoneIcon, MapPinIcon } from "../../../components/Icons";
+import { QrCodeIcon, ChefHatIcon, TableIcon, ClockIcon, ChartIcon, CheckCircleIcon, SparklesIcon, MailIcon, PhoneIcon, MapPinIcon, PlusIcon, LockIcon, UnlockIcon, TrashIcon, EditIcon, RefreshIcon, UserPlusIcon, KeyIcon, StorefrontIcon, CogIcon, CurrencyRupeeIcon, CurrencyDollarIcon } from "../../../components/Icons";
 import { useSocket } from "../../../lib/useSocket";
 import { validatePassword } from "../../../lib/passwordValidation";
 
@@ -42,7 +42,7 @@ export default function RestaurantDashboard() {
   const [loggingOut, setLoggingOut] = useState(false);
   const [activeTab, setActiveTab] = useState("overview"); // "overview", "menu", "tables", "staff", "analytics", or "settings"
 
-  // Restaurant Admin State (Profiles, Contacts, Branding)
+  // Restaurant Admin State (Profiles, Contacts, Branding, Plan Limits)
   const [profile, setProfile] = useState({
     restaurantName: "Cafe Aroma",
     ownerName: "Aarav Sharma",
@@ -54,8 +54,18 @@ export default function RestaurantDashboard() {
     logo: "",
     currency: "INR",
     themeColor: "orange",
+    planType: "Growth",
     isLocked: false,
   });
+
+  const getMaxTablesForPlan = (plan) => {
+    if (!plan) return 30;
+    const p = plan.toString().toLowerCase();
+    if (p.includes("starter")) return 10;
+    if (p.includes("growth")) return 30;
+    if (p.includes("pro") || p.includes("enterprise")) return 50;
+    return 30;
+  };
 
   // DB States
   const [menuItems, setMenuItems] = useState([]);
@@ -143,6 +153,7 @@ export default function RestaurantDashboard() {
       const res = await fetch(`/api/restaurants/${restId}`);
       if (res.ok) {
         const data = await res.json();
+        const activePlan = data.planType || data.subscriptionPlan || "Growth";
         setProfile({
           restaurantName: data.name || "Cafe Aroma",
           ownerName: data.ownerName || "Aarav Sharma",
@@ -154,8 +165,13 @@ export default function RestaurantDashboard() {
           logo: data.logo || "",
           currency: data.currency || "INR",
           themeColor: data.themeColor || "orange",
+          planType: activePlan,
           isLocked: data.isLocked === true,
         });
+
+        // Cap initial table count based on active plan limit
+        const limit = getMaxTablesForPlan(activePlan);
+        setTableCount((prev) => Math.min(prev, limit));
       }
     } catch (e) {
       console.error("Failed to load restaurant profile:", e);
@@ -415,7 +431,16 @@ export default function RestaurantDashboard() {
 
   const handleTableGenerateSubmit = (e) => {
     e.preventDefault();
-    const count = parseInt(tableCount) || 1;
+    const maxAllowed = getMaxTablesForPlan(profile.planType);
+    const count = parseInt(tableCount, 10) || 1;
+
+    if (count > maxAllowed) {
+      alert(`⚠️ Active Plan Limit Exceeded!\n\nYour restaurant's active ${profile.planType || 'Growth'} Plan allows a maximum of ${maxAllowed} Dining Tables.\n\nTo generate ${count} tables, please upgrade your subscription plan.`);
+      setTableCount(maxAllowed);
+      generateTablesList(maxAllowed);
+      return;
+    }
+
     generateTablesList(count);
   };
 
@@ -888,7 +913,7 @@ export default function RestaurantDashboard() {
         {/* Dynamic widgets row (Total Tables, Total Orders, Total Menu Items, Active Orders, Completed Orders) */}
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
           {[
-            { label: "Total Tables", val: totalTables, icon: <TableIcon className="w-5 h-5 text-indigo-500" />, desc: "Seating layout" },
+            { label: "Total Tables", val: totalTables, icon: <TableIcon className="w-5 h-5 text-indigo-500" />, desc: `${profile.planType || 'Growth'} Limit: ${getMaxTablesForPlan(profile.planType)} Max` },
             { label: "Total Orders", val: totalOrders, icon: <ChartIcon className="w-5 h-5 text-emerald-500" />, desc: "Combined orders" },
             { label: "Total Menu Items", val: totalMenuItems, icon: <QrCodeIcon className="w-5 h-5 text-indigo-500" />, desc: "Active items online" },
             { label: "Active Orders", val: activeOrdersCount, icon: <ChefHatIcon className={`w-5 h-5 ${themeText[profile.themeColor]}`} />, desc: "Cooking tickets" },
@@ -1585,18 +1610,39 @@ export default function RestaurantDashboard() {
                     </div>
                   </div>
 
-                  <form onSubmit={handleTableGenerateSubmit} className="flex flex-col sm:flex-row items-end gap-4 max-w-lg">
-                    <div className="flex-grow space-y-1.5">
-                      <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Number of Dining Tables</label>
+                  <form onSubmit={handleTableGenerateSubmit} className="flex flex-col sm:flex-row items-end gap-4 max-w-xl">
+                    <div className="flex-grow space-y-1.5 w-full">
+                      <div className="flex items-center justify-between gap-2">
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Number of Dining Tables</label>
+                        <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-brand-500/10 text-brand-500 border border-brand-500/20">
+                          {profile.planType || "Growth"} Plan: Max {getMaxTablesForPlan(profile.planType)} Tables
+                        </span>
+                      </div>
                       <input
                         type="number"
                         min="1"
-                        max="50"
+                        max={getMaxTablesForPlan(profile.planType)}
                         required
                         value={tableCount}
-                        onChange={(e) => setTableCount(e.target.value)}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value, 10);
+                          const maxAllowed = getMaxTablesForPlan(profile.planType);
+                          if (val > maxAllowed) {
+                            alert(`⚠️ Your active ${profile.planType || "Growth"} Plan allows a maximum of ${maxAllowed} Dining Tables.`);
+                            setTableCount(maxAllowed);
+                          } else {
+                            setTableCount(e.target.value);
+                          }
+                        }}
                         className="block w-full rounded-xl border border-slate-200 dark:border-slate-850 bg-slate-50 dark:bg-zinc-950 px-4 py-2.5 text-xs focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 font-semibold text-slate-900 dark:text-white"
+                        placeholder={`1 - ${getMaxTablesForPlan(profile.planType)} Tables`}
                       />
+                      <p className="text-[11px] text-slate-400">
+                        Active {profile.planType || "Growth"} Plan quota: 1 to {getMaxTablesForPlan(profile.planType)} tables limit. Need more tables?{" "}
+                        <a href="/pricing" target="_blank" rel="noopener noreferrer" className="text-brand-500 font-bold underline">
+                          Upgrade Plan ↗
+                        </a>
+                      </p>
                     </div>
 
                     <button

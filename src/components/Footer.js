@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { QrCodeIcon, MailIcon } from "./Icons";
+import { FaTwitter, FaFacebook, FaInstagram, FaLinkedin } from "react-icons/fa6";
 
 export default function Footer() {
   const [email, setEmail] = useState("");
@@ -20,7 +21,7 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-slate-900 text-slate-400 border-t border-slate-800" aria-labelledby="footer-heading">
+    <footer className="bg-slate-900 dark:bg-zinc-950 text-slate-400 border-t border-slate-800" aria-labelledby="footer-heading">
       <h2 id="footer-heading" className="sr-only">Footer</h2>
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
         <div className="xl:grid xl:grid-cols-3 xl:gap-8">
@@ -34,17 +35,23 @@ export default function Footer() {
                 className="h-10 w-auto object-contain"
               />
             </Link>
-            <p className="text-sm text-slate-400 max-w-xs">
+            <p className="text-sm text-slate-400 max-w-xs leading-relaxed">
               Empowering restaurants to digitize their dining experience. Create QR Menus, manage table occupancy, and optimize kitchen operations seamlessly.
             </p>
 
-            <div className="flex space-x-6">
-              {/* Fake social icons */}
-              {["twitter", "facebook", "instagram", "linkedin"].map((social) => (
-                <a key={social} href="#" className="hover:text-white transition-colors duration-200 capitalize text-sm">
-                  {social}
-                </a>
-              ))}
+            <div className="flex space-x-5 items-center">
+              <a href="#" className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-brand-500 hover:text-white flex items-center justify-center transition-all cursor-pointer text-slate-300" title="Twitter">
+                <FaTwitter className="w-4 h-4" />
+              </a>
+              <a href="#" className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-brand-500 hover:text-white flex items-center justify-center transition-all cursor-pointer text-slate-300" title="Facebook">
+                <FaFacebook className="w-4 h-4" />
+              </a>
+              <a href="#" className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-brand-500 hover:text-white flex items-center justify-center transition-all cursor-pointer text-slate-300" title="Instagram">
+                <FaInstagram className="w-4 h-4" />
+              </a>
+              <a href="#" className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-brand-500 hover:text-white flex items-center justify-center transition-all cursor-pointer text-slate-300" title="LinkedIn">
+                <FaLinkedin className="w-4 h-4" />
+              </a>
             </div>
           </div>
 
@@ -64,17 +71,17 @@ export default function Footer() {
               <ul role="list" className="mt-4 space-y-4">
                 <li><Link href="/about" className="text-sm hover:text-white transition-colors">About Us</Link></li>
                 <li><Link href="/blog" className="text-sm hover:text-white transition-colors">Blog & Guides</Link></li>
-                <li><span className="text-sm text-slate-500 cursor-not-allowed">Careers (Hiring!)</span></li>
-                <li><span className="text-sm text-slate-500 cursor-not-allowed">Press Kit</span></li>
+                <li><Link href="/careers" className="text-sm hover:text-white transition-colors">Careers </Link></li>
+                <li><Link href="/press-kit" className="text-sm hover:text-white transition-colors">Press Kit</Link></li>
               </ul>
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-white tracking-wider uppercase">Legal</h3>
+              <h3 className="text-sm font-semibold text-white tracking-wider uppercase">Legal & SLA</h3>
               <ul role="list" className="mt-4 space-y-4">
                 <li><Link href="/privacy" className="text-sm hover:text-white transition-colors">Privacy Policy</Link></li>
                 <li><Link href="/terms" className="text-sm hover:text-white transition-colors">Terms of Service</Link></li>
-                <li><span className="text-sm text-slate-500 cursor-not-allowed">Refund Policy</span></li>
-                <li><span className="text-sm text-slate-500 cursor-not-allowed">SLA Agreement</span></li>
+                <li><Link href="/refund-policy" className="text-sm hover:text-white transition-colors">Refund Policy</Link></li>
+                <li><Link href="/sla" className="text-sm hover:text-white transition-colors">SLA Agreement</Link></li>
               </ul>
             </div>
 

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { QrCodeIcon, ChartIcon, UsersIcon, ShieldCheckIcon, CheckCircleIcon, XIcon, SparklesIcon, CalendarIcon, PhoneIcon, MailIcon, MapPinIcon } from "../../../components/Icons";
+import { QrCodeIcon, ChartIcon, UsersIcon, ShieldCheckIcon, CheckCircleIcon, XIcon, SparklesIcon, CalendarIcon, PhoneIcon, MailIcon, MapPinIcon, PlusIcon, LockIcon, UnlockIcon, TrashIcon, EditIcon, RefreshIcon, UserPlusIcon, KeyIcon, StorefrontIcon, CogIcon } from "../../../components/Icons";
 import { validatePassword } from "../../../lib/passwordValidation";
 
 export default function MasterDashboard() {
